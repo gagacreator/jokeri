@@ -1,0 +1,17 @@
+{
+  "name": "jokeri",
+  "version": "1.0.0",
+  "description": "Joker card game - mobile web, admin-created tables with invite links",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/sim.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.1"
+  }
+}
