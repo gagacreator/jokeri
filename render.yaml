@@ -2,14 +2,10 @@ services:
   - type: web
     name: jokeri
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install --omit=dev
     startCommand: node server.js
     healthCheckPath: /
     envVars:
-      - key: DATA_DIR
-        value: /var/data
-    disk:
-      name: jokeri-data
-      mountPath: /var/data
-      sizeGB: 1
+      - key: ADMIN_USERNAME
+        sync: false
