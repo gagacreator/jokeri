@@ -14,6 +14,7 @@ let st = null; // latest table state
 let selected = null; // card id raised in hand
 let jokerPick = null; // joker card id awaiting mode choice
 let showScore = false;
+let showLast = false;
 let authMode = 'login';
 
 // ---------- helpers ----------
@@ -91,6 +92,7 @@ function leaveTableView() {
   selected = null;
   jokerPick = null;
   showScore = false;
+  showLast = false;
 }
 
 function logout() {
@@ -324,11 +326,13 @@ function seatBox(g, seat, pos) {
 function trickHtml(g, mySeat) {
   const trickNo = g.tricksWon.reduce((a, b) => a + b, 0);
   const wRel = g.trickWinner === null ? 0 : (g.trickWinner - mySeat + 4) % 4;
+  // one shared clock for the sweep so all four cards leave together as a pile
+  const se = g.phase === 'trickEnd' ? elapsed(`sw:${dealKey(g)}:${trickNo}`) : 0;
   return g.trick.map((t, i) => {
     const rel = (t.seat - mySeat + 4) % 4;
     const e = elapsed(`tc:${dealKey(g)}:${trickNo}:${t.seat}`);
     // playIn runs right away, sweep (only while the trick is ending) starts late in the pause
-    const style = `animation-delay:${-e}ms,${1150 - e}ms`;
+    const style = `animation-delay:${-e}ms,${1150 - se}ms`;
     let tag = '';
     if (t.card.s === 'J') {
       tag = t.mode === 'low' ? 'დაბალი' : 'მაღალი';
@@ -336,6 +340,15 @@ function trickHtml(g, mySeat) {
     }
     return `<div class="slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''}" style="z-index:${i + 1}">${card3d(t.card, { style })}${tag ? `<span class="jtag">${tag}</span>` : ''}</div>`;
   }).join('');
+}
+
+function lastTrickHtml(g) {
+  if (!g.lastTrick) return '';
+  const items = g.lastTrick.map(t => `<div class="lt-item ${g.lastWinner === t.seat ? 'win' : ''}">${card3d(t.card)}<span>${esc(g.names[t.seat])}${g.lastWinner === t.seat ? ' ★' : ''}</span></div>`).join('');
+  return `<div class="lt">
+    <button class="lt-toggle" data-act="last">ბოლო ხელი ${showLast ? '▴' : '▾'}${g.lastWinner !== null ? ` · ${esc(g.names[g.lastWinner])}-მ წაიღო` : ''}</button>
+    ${showLast ? `<div class="lt-row">${items}</div>` : ''}
+  </div>`;
 }
 
 function statusText(g, mySeat) {
@@ -449,6 +462,7 @@ function renderGame() {
         ${seatBox(g, seatAt(3), 'right')}
         ${dealing ? ghostsHtml(g, mySeat, dealT) : ''}
       </div>
+      ${lastTrickHtml(g)}
       <div class="status ${myTurn ? 'mine' : ''}">${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, mySeat))}</div>
       <div class="mine-info"><span class="nm">${g.dealer === mySeat ? '<span class="dealer">D</span> ' : ''}${esc(g.names[mySeat])}</span> ${bidTxt ? '· ' + bidTxt : ''}</div>
       <div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>
@@ -606,6 +620,7 @@ document.addEventListener('click', async e => {
         loadTables();
       }
       return;
+    case 'last': showLast = !showLast; return renderGame();
     case 'score': showScore = true; return renderGame();
     case 'score-close': showScore = false; return renderGame();
     case 'bid': return emit('game:bid', Number(el.dataset.n));

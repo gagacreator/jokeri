@@ -87,6 +87,7 @@ function startDeal(g) {
   g.tricksWon = [0, 0, 0, 0];
   g.trick = [];
   g.lastTrick = null;
+  g.lastWinner = null;
   g.trickWinner = null;
   g.dealSummary = null;
   g.leader = (g.dealer + 1) % 4;
@@ -210,6 +211,7 @@ function advance(g) {
   } else if (g.phase === 'trickEnd') {
     g.tricksWon[g.trickWinner]++;
     g.lastTrick = g.trick;
+    g.lastWinner = g.trickWinner;
     g.trick = [];
     g.leader = g.trickWinner;
     g.turn = g.trickWinner;
@@ -281,6 +283,7 @@ function viewFor(g, seat) {
     trick: g.trick,
     trickWinner: g.phase === 'trickEnd' ? g.trickWinner : null,
     lastTrick: g.lastTrick,
+    lastWinner: g.lastWinner,
     tricksWon: g.tricksWon,
     handCounts: g.hands.map(h => h.length),
     hand: seat >= 0 ? sortHand(g.hands[seat]) : [],
