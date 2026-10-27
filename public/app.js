@@ -324,7 +324,7 @@ function seatBox(g, seat, pos) {
 function trickHtml(g, mySeat) {
   const trickNo = g.tricksWon.reduce((a, b) => a + b, 0);
   const wRel = g.trickWinner === null ? 0 : (g.trickWinner - mySeat + 4) % 4;
-  return g.trick.map(t => {
+  return g.trick.map((t, i) => {
     const rel = (t.seat - mySeat + 4) % 4;
     const e = elapsed(`tc:${dealKey(g)}:${trickNo}:${t.seat}`);
     // playIn runs right away, sweep (only while the trick is ending) starts late in the pause
@@ -334,7 +334,7 @@ function trickHtml(g, mySeat) {
       tag = t.mode === 'low' ? 'დაბალი' : 'მაღალი';
       if (t.suit) tag += ` ${SYM[t.suit]}`;
     }
-    return `<div class="slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''}">${card3d(t.card, { style })}${tag ? `<span class="jtag">${tag}</span>` : ''}</div>`;
+    return `<div class="slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''}" style="z-index:${i + 1}">${card3d(t.card, { style })}${tag ? `<span class="jtag">${tag}</span>` : ''}</div>`;
   }).join('');
 }
 

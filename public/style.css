@@ -115,18 +115,21 @@ h2 { margin: 0; font-size: 18px; }
 .hc.sel .c3 .cf { box-shadow: 0 0 0 3px var(--gold), 0 8px 16px rgba(0,0,0,.6); }
 
 /* played cards */
-.slotc { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.slotc.s0 { bottom: 4px; left: 50%; margin-left: -23px; --sx: 0px; --sy: 34vh; --r: -4deg; }
-.slotc.s1 { left: 2px; top: 50%; margin-top: -40px; --sx: -38vw; --sy: 0px; --r: 7deg; }
-.slotc.s2 { top: 4px; left: 50%; margin-left: -23px; --sx: 0px; --sy: -30vh; --r: -7deg; }
-.slotc.s3 { right: 2px; top: 50%; margin-top: -40px; --sx: 38vw; --sy: 0px; --r: 5deg; }
+.slotc { position: absolute; left: 50%; top: 46%; width: 56px; height: 82px; margin: -41px 0 0 -28px; transform: translate(var(--ox), var(--oy)); }
+.slotc.s0 { --sx: 0px; --sy: 34vh; --ox: 0px; --oy: 18px; --r: -5deg; }
+.slotc.s1 { --sx: -38vw; --sy: 0px; --ox: -20px; --oy: 2px; --r: 9deg; }
+.slotc.s2 { --sx: 0px; --sy: -30vh; --ox: 3px; --oy: -18px; --r: -10deg; }
+.slotc.s3 { --sx: 38vw; --sy: 0px; --ox: 20px; --oy: -2px; --r: 6deg; }
+.slotc .c3 { width: 56px; height: 82px; }
+.slotc .c3 .cr { font-size: 16px; }
+.slotc .c3 .cc { font-size: 34px; }
 .slotc .c3 { transform: rotate(var(--r)); animation: playIn .5s cubic-bezier(.2,.8,.25,1) both; }
 .center.ending .slotc .c3 { animation: playIn .5s cubic-bezier(.2,.8,.25,1) both, sweep .5s ease-in both; }
 .center.ending .slotc.w0 .c3 { --wx: 0px; --wy: 36vh; }
 .center.ending .slotc.w1 .c3 { --wx: -40vw; --wy: 0px; }
 .center.ending .slotc.w2 .c3 { --wx: 0px; --wy: -34vh; }
 .center.ending .slotc.w3 .c3 { --wx: 40vw; --wy: 0px; }
-.slotc .jtag { font-size: 11px; background: rgba(0,0,0,.65); border-radius: 8px; padding: 1px 6px; white-space: nowrap; }
+.slotc .jtag { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 3px; font-size: 11px; background: rgba(0,0,0,.65); border-radius: 8px; padding: 1px 6px; white-space: nowrap; }
 .slotc.win .c3 .front { box-shadow: 0 0 0 3px var(--gold), 0 0 18px var(--gold); }
 @keyframes playIn {
   0% { transform: translate(var(--sx), var(--sy)) rotateX(55deg) rotateZ(-25deg) scale(1.35); opacity: 0; }
