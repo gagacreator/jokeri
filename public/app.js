@@ -69,14 +69,6 @@ async function shareLink(code, name) {
   copyText(url);
 }
 
-function cardHtml(c, extra = '') {
-  if (c.s === 'J') {
-    return `<div class="pc joker ${extra}" data-id="${c.id}"><span class="s">🃏</span><span class="r">ჯოკერი</span></div>`;
-  }
-  const rank = RANKS[c.r] || c.r;
-  return `<div class="pc ${isRed(c.s) ? 'red' : ''} ${extra}" data-id="${c.id}"><span class="r">${rank}</span><span class="s">${SYM[c.s]}</span></div>`;
-}
-
 // ---------- routing ----------
 async function boot() {
   if (token) {
@@ -277,48 +269,152 @@ function renderLobby() {
 }
 
 // ---------- game ----------
-function trumpLabel(t) {
-  if (t === null) return '<span class="sym">—</span>კოზირი';
-  if (t === 'N') return '<span class="sym">∅</span>უკოზირო';
-  return `<span class="sym ${isRed(t) ? 'red' : ''}">${SYM[t]}</span>კოზირი`;
+const DRAW_STEP = 1000; // must match the server's DRAW_STEP default
+
+// time since an animation key was first rendered; lets re-renders continue animations instead of restarting them
+const seen = new Map();
+function elapsed(key) {
+  const now = performance.now();
+  if (!seen.has(key)) seen.set(key, now);
+  return now - seen.get(key);
 }
+
+let rerenderTimer = null;
+function rerenderIn(ms) {
+  clearTimeout(rerenderTimer);
+  rerenderTimer = setTimeout(() => { if (st?.game) renderGame(); }, Math.max(20, ms));
+}
+
+function card3d(c, { cls = '', style = '', attrs = '' } = {}) {
+  const red = isRed(c.s) ? 'red' : '';
+  if (c.s === 'J') {
+    return `<div class="c3 joker ${cls}" style="${style}" ${attrs}><div class="cf front"><span class="cr">JOKER</span><span class="cc">🃏</span></div><div class="cf back"></div></div>`;
+  }
+  const rank = RANKS[c.r] || c.r;
+  return `<div class="c3 ${red} ${cls}" style="${style}" ${attrs}><div class="cf front"><span class="cr">${rank}<br>${SYM[c.s]}</span><span class="cc">${SYM[c.s]}</span><span class="cr br">${rank}<br>${SYM[c.s]}</span></div><div class="cf back"></div></div>`;
+}
+
+function backs(n) {
+  return '<i></i>'.repeat(Math.min(n, 9));
+}
+
+function trumpChip(g) {
+  if (g.trumpCard === null || g.trumpCard === undefined) return '<span class="sym">—</span>კოზირი';
+  if (g.trump === 'N') return '<span class="sym">∅</span>უკოზირო';
+  return card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${dealTotalMs(g) - elapsed(dealKey(g))}ms` }) + 'კოზირი';
+}
+
+const gameId = g => g.draw.seq.map(x => x.card.id).join('');
+const dealKey = g => `deal:${gameId(g)}:${g.dealIdx}`;
+const dealStep = g => Math.min(80, 1800 / (4 * Math.max(1, g.cards)));
+const dealTotalMs = g => 4 * g.cards * dealStep(g) + 600;
 
 function seatBox(g, seat, pos) {
   const name = g.names[seat];
   const bid = g.bids[seat];
   const online = st.players[seat]?.online;
-  const phaseBid = g.phase === 'bidding';
   return `
     <div class="seat ${pos} ${g.turn === seat ? 'turn' : ''}">
       <div class="nm">${g.dealer === seat ? '<span class="dealer">D</span>' : ''}<span class="dot ${online ? '' : 'off'}"></span>${esc(name)}</div>
-      <div class="st">${bid === null ? (phaseBid ? 'ფიქრობს…' : '') : `დაკვ. <b>${bid}</b> · აღ. <b>${g.tricksWon[seat]}</b>`}</div>
-      ${pos !== 'me' ? `<div class="minihand">${'🂠'.repeat(Math.min(g.handCounts[seat], 9))}</div>` : ''}
+      <div class="st">${bid === null ? (g.phase === 'bidding' ? 'ფიქრობს…' : '') : `დაკვ. <b>${bid}</b> · აღ. <b>${g.tricksWon[seat]}</b>`}</div>
+      <div class="minihand">${backs(g.handCounts[seat])}</div>
     </div>`;
 }
 
 function trickHtml(g, mySeat) {
+  const trickNo = g.tricksWon.reduce((a, b) => a + b, 0);
+  const wRel = g.trickWinner === null ? 0 : (g.trickWinner - mySeat + 4) % 4;
   return g.trick.map(t => {
     const rel = (t.seat - mySeat + 4) % 4;
+    const e = elapsed(`tc:${dealKey(g)}:${trickNo}:${t.seat}`);
+    // playIn runs right away, sweep (only while the trick is ending) starts late in the pause
+    const style = `animation-delay:${-e}ms,${1150 - e}ms`;
     let tag = '';
     if (t.card.s === 'J') {
-      tag = t.mode === 'low' ? 'დაბალი' : t.suit ? `მაღალი ${SYM[t.suit]}` : 'მაღალი';
+      tag = t.mode === 'low' ? 'დაბალი' : 'მაღალი';
+      if (t.suit) tag += ` ${SYM[t.suit]}`;
     }
-    return `<div class="slotc s${rel} ${g.trickWinner === t.seat ? 'win' : ''}">${cardHtml(t.card)}${tag ? `<span class="jtag">${tag}</span>` : ''}</div>`;
+    return `<div class="slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''}">${card3d(t.card, { style })}${tag ? `<span class="jtag">${tag}</span>` : ''}</div>`;
   }).join('');
 }
 
 function statusText(g, mySeat) {
-  if (g.phase === 'bidding') {
-    return g.turn === mySeat ? 'შენი დაკვეთის რიგია' : `${g.names[g.turn]} აკვეთებს…`;
-  }
-  if (g.phase === 'trump') {
-    return g.turn === mySeat ? 'აირჩიე კოზირი' : `${g.names[g.turn]} ირჩევს კოზირს…`;
-  }
-  if (g.phase === 'playing') {
-    return g.turn === mySeat ? 'შენი სვლაა' : `${g.names[g.turn]}-ის სვლაა`;
-  }
+  if (g.phase === 'bidding') return g.turn === mySeat ? 'შენი დაკვეთის რიგია' : `${g.names[g.turn]} აკვეთებს…`;
+  if (g.phase === 'playing') return g.turn === mySeat ? 'შენი სვლაა' : `${g.names[g.turn]}-ის სვლაა`;
   if (g.phase === 'trickEnd') return `${g.names[g.trickWinner]} იღებს ხელს`;
   return '';
+}
+
+function renderDraw(g, mySeat) {
+  const seq = g.draw.seq;
+  const key = `draw:${gameId(g)}`;
+  const e = elapsed(key);
+  const shown = Math.min(seq.length, Math.floor(e / DRAW_STEP) + 1);
+  const done = shown === seq.length && e >= (seq.length - 1) * DRAW_STEP + 900;
+  if (shown < seq.length || !done) rerenderIn(shown < seq.length ? DRAW_STEP - (e % DRAW_STEP) : (seq.length - 1) * DRAW_STEP + 900 - e);
+  const seatAt = rel => (mySeat + rel) % 4;
+  const posOf = ['me', 'left', 'top', 'right'];
+  const box = rel => {
+    const seat = seatAt(rel);
+    const mine = seq.slice(0, shown).map((x, i) => ({ ...x, i })).filter(x => x.seat === seat);
+    const win = done && g.draw.winner === seat;
+    return `<div class="seat ${posOf[rel]} ${win ? 'winner' : ''}">
+      <div class="nm">${win ? '<span class="dealer">D</span>' : ''}${esc(g.names[seat])}</div>
+      <div class="drawrow">${mine.map(x => card3d(x.card, {
+        cls: `drawfly r${rel}`,
+        style: `animation-delay:${-elapsed(`${key}:${x.i}`)}ms`,
+      })).join('')}</div>
+    </div>`;
+  };
+  const banner = done
+    ? `🂡 ${esc(g.names[g.draw.winner])}-ს ამოუვიდა ტუზი!<br><span style="font-size:13px;font-weight:500;color:#fff">ის დილერია და ყველაზე ბოლოს აკვეთებს</span>`
+    : 'ვინ ამოიღებს ტუზს…';
+  app.innerHTML = `
+    <div class="game">
+      <div class="felt3d"></div>
+      <div class="topbar"><div class="info"><b>ჯოკერი</b><br>დილერის არჩევა</div></div>
+      <div class="board drawing">
+        ${box(2)}${box(1)}
+        <div class="center"><div class="deck"><i></i><i></i><i></i><i></i></div></div>
+        ${box(3)}${box(0)}
+      </div>
+      <div class="drawbanner">${banner}</div>
+      <div class="acehint">პირველი ტუზის მიღებამდე კარტებს სათითაოდ ვაჩვენებთ</div>
+    </div>`;
+}
+
+function handHtml(g, playingTurn, dealT) {
+  const n = g.hand.length;
+  const cardW = 56;
+  const avail = Math.min(window.innerWidth, 520) - 24;
+  const overlap = n > 1 ? Math.max(4, (n * cardW - avail) / (n - 1)) : 0;
+  const ang = Math.min(5, 36 / Math.max(n, 1));
+  const step = dealStep(g);
+  const pos = (st.seat - g.dealer - 1 + 4) % 4;
+  return g.hand.map((c, i) => {
+    const mid = (n - 1) / 2;
+    const off = i - mid;
+    const cls = ['hc', !playingTurn || g.legal.includes(c.id) ? 'ok' : 'dim', playingTurn ? 'myturn' : '', selected === c.id ? 'sel' : ''].join(' ');
+    const k = i * 4 + pos; // order in which this card is dealt out
+    const delay = k * step - dealT;
+    const style = `--rot:${(off * ang).toFixed(1)}deg;--ty:${(off * off * 0.9).toFixed(1)}px;${i ? `margin-left:${-overlap}px` : ''}`;
+    const inner = card3d(c, { cls: dealT < dealTotalMs(g) ? 'dealin' : '', style: dealT < dealTotalMs(g) ? `animation-delay:${delay}ms` : '' });
+    return `<div class="${cls}" style="${style}" data-id="${c.id}">${inner}</div>`;
+  }).join('');
+}
+
+function ghostsHtml(g, mySeat, dealT) {
+  const dirs = [[0, 36, 8], [-40, 4, -20], [0, -30, 10], [40, 4, 25]]; // vw/vh offsets per relative seat
+  const step = dealStep(g);
+  let out = '';
+  for (let k = 0; k < 4 * g.cards; k++) {
+    const seat = (g.dealer + 1 + (k % 4)) % 4;
+    const rel = (seat - mySeat + 4) % 4;
+    if (rel === 0) continue; // own cards fly into the hand itself
+    const [x, y, r] = dirs[rel];
+    out += `<div class="ghost" style="--tx:${x}vw;--ty:${y}vh;--gr:${r}deg;animation-delay:${k * step - dealT}ms"></div>`;
+  }
+  return out;
 }
 
 function renderGame() {
@@ -328,54 +424,45 @@ function renderGame() {
     app.innerHTML = '<div class="screen"><div class="card-box"><h2>თამაში უკვე დაიწყო</h2><button class="btn" data-act="home">მთავარი გვერდი</button></div></div>';
     return;
   }
+  if (g.phase === 'draw') return renderDraw(g, mySeat);
+
   const seatAt = rel => (mySeat + rel) % 4;
   const myTurn = g.turn === mySeat;
   const playingTurn = myTurn && g.phase === 'playing';
+  const dealT = elapsed(dealKey(g));
+  const dealing = dealT < dealTotalMs(g);
+  if (dealing) rerenderIn(dealTotalMs(g) - dealT + 30);
   const bidTxt = g.bids[mySeat] === null ? '' : `დაკვეთა <b>${g.bids[mySeat]}</b> · აღებული <b>${g.tricksWon[mySeat]}</b>`;
 
   app.innerHTML = `
     <div class="game">
+      <div class="felt3d"></div>
       <div class="topbar">
         <button class="iconbtn" data-act="score">ქულები</button>
         <div class="info">პულკა <b>${g.pulka + 1}</b>/4 · დარიგება <b>${g.dealIdx + 1}</b>/${g.totalDeals}<br>${g.cards} კარტი</div>
-        <div class="trumpchip">${trumpLabel(g.trump)}</div>
+        <div class="trumpchip">${trumpChip(g)}</div>
       </div>
       <div class="board">
         ${seatBox(g, seatAt(2), 'top')}
         ${seatBox(g, seatAt(1), 'left')}
-        <div class="center">${trickHtml(g, mySeat)}</div>
+        <div class="center ${g.phase === 'trickEnd' ? 'ending' : ''}">${dealing ? '<div class="deck"><i></i><i></i><i></i><i></i></div>' : ''}${trickHtml(g, mySeat)}</div>
         ${seatBox(g, seatAt(3), 'right')}
+        ${dealing ? ghostsHtml(g, mySeat, dealT) : ''}
       </div>
-      <div class="status ${myTurn ? 'mine' : ''}">${esc(statusText(g, mySeat))}</div>
+      <div class="status ${myTurn ? 'mine' : ''}">${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, mySeat))}</div>
       <div class="mine-info"><span class="nm">${g.dealer === mySeat ? '<span class="dealer">D</span> ' : ''}${esc(g.names[mySeat])}</span> ${bidTxt ? '· ' + bidTxt : ''}</div>
-      <div class="hand" id="hand">
-        ${g.hand.map(c => cardHtml(c, [
-          !playingTurn || g.legal.includes(c.id) ? 'ok' : 'dim',
-          playingTurn ? 'myturn' : '',
-          selected === c.id ? 'sel' : '',
-        ].join(' '))).join('')}
-      </div>
-      ${overlayHtml(g, mySeat)}
+      <div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>
+      ${overlayHtml(g, mySeat, dealing)}
     </div>`;
-  fitHand(g.hand.length);
 }
 
-function fitHand(n) {
-  const hand = document.getElementById('hand');
-  if (!hand || n < 2) return;
-  const cardW = 56;
-  const avail = hand.clientWidth - 16;
-  const overlap = Math.max(0, (n * cardW - avail) / (n - 1));
-  hand.querySelectorAll('.pc').forEach((el, i) => { if (i > 0) el.style.marginLeft = -overlap + 'px'; });
-}
-
-function overlayHtml(g, mySeat) {
+function overlayHtml(g, mySeat, dealing) {
   const myTurn = g.turn === mySeat;
   if (g.phase === 'finished') return finishedHtml(g);
   if (showScore) return scoreHtml(g);
   if (g.phase === 'dealEnd') return dealEndHtml(g);
   if (jokerPick && myTurn && g.phase === 'playing') return jokerHtml(g);
-  if (myTurn && g.phase === 'bidding') {
+  if (myTurn && g.phase === 'bidding' && !dealing) {
     const nums = [...Array(g.cards + 1).keys()];
     const known = g.bids.map((b, i) => b === null ? '' : `${esc(g.names[i])}: ${b}`).filter(Boolean).join(' · ');
     return `<div class="overlay panel"><div class="sheet">
@@ -385,24 +472,18 @@ function overlayHtml(g, mySeat) {
       ${g.forbiddenBid !== null ? `<div class="muted" style="text-align:center">შენ (დილერს) ${g.forbiddenBid} არ შეგიძლია</div>` : ''}
     </div></div>`;
   }
-  if (myTurn && g.phase === 'trump') {
-    return `<div class="overlay panel"><div class="sheet">
-      <h3>აირჩიე კოზირი</h3>
-      <div class="suitgrid">${['S', 'C', 'D', 'H'].map(s => `<button class="btn ${isRed(s) ? 'red' : 'blk'}" data-act="trump" data-s="${s}">${SYM[s]}</button>`).join('')}</div>
-      <button class="btn sec" data-act="trump" data-s="N">უკოზირო</button>
-    </div></div>`;
-  }
   return '';
 }
 
 function jokerHtml(g) {
-  const leading = g.trick.length === 0;
-  if (leading) {
+  const suits = mode => ['S', 'C', 'D', 'H'].map(s => `<button class="btn ${isRed(s) ? 'red' : 'blk'}" data-act="joker" data-mode="${mode}" data-s="${s}">${SYM[s]}</button>`).join('');
+  if (g.trick.length === 0) {
     return `<div class="overlay"><div class="sheet">
       <h3>ჯოკერით ხელის გახსნა</h3>
-      <div class="muted" style="text-align:center">მაღალი — იღებ ხელს და ითხოვ ნიშანს:</div>
-      <div class="suitgrid">${['S', 'C', 'D', 'H'].map(s => `<button class="btn ${isRed(s) ? 'red' : 'blk'}" data-act="joker" data-mode="high" data-s="${s}">${SYM[s]}</button>`).join('')}</div>
-      <button class="btn sec" data-act="joker" data-mode="low">დაბალი (არ ვიღებ)</button>
+      <div class="muted" style="text-align:center">მაღალი — იღებ ხელს, დანარჩენები ნიშანს მოგყვებიან. აირჩიე ნიშანი:</div>
+      <div class="suitgrid">${suits('high')}</div>
+      <div class="muted" style="text-align:center">დაბალი — არ იღებ ხელს (თუ ნიშანს არავინ მოჰყვა, მაინც შენია):</div>
+      <div class="suitgrid">${suits('low')}</div>
       <button class="btn danger" data-act="joker-cancel">გაუქმება</button>
     </div></div>`;
   }
@@ -420,7 +501,8 @@ function scoreTable(g) {
   let lastPulka = -1;
   const pulkaTotals = [0, 0, 0, 0];
   const flushPulka = p => {
-    rows += `<tr class="pl"><td class="l">პულკა ${p + 1}</td>${pulkaTotals.map(v => `<td>${v}</td>`).join('')}</tr>`;
+    const bn = g.bonuses[p] || [0, 0, 0, 0];
+    rows += `<tr class="pl"><td class="l">პულკა ${p + 1}</td>${pulkaTotals.map((v, i) => `<td>${v + bn[i]}${bn[i] ? `<small style="display:block;font-size:10px">+${bn[i]} ბონუსი</small>` : ''}</td>`).join('')}</tr>`;
     pulkaTotals.fill(0);
   };
   g.history.forEach(h => {
@@ -444,7 +526,7 @@ function dealEndHtml(g) {
   const d = g.dealSummary;
   return `<div class="overlay mid"><div class="sheet">
     <h3>დარიგება დასრულდა</h3>
-    ${d.points.map((p, i) => `<div class="rank"><span class="nm">${esc(g.names[i])}</span><span class="muted">${d.bids[i]}/${d.taken[i]}</span><b class="${p < 0 ? 'neg' : 'pos'}">${p > 0 ? '+' : ''}${p}</b></div>`).join('')}
+    ${d.points.map((p, i) => `<div class="rank"><span class="nm">${esc(g.names[i])}</span><span class="muted">${d.bids[i]}/${d.taken[i]}</span><b class="${p < 0 ? 'neg' : 'pos'}">${p > 0 ? '+' : ''}${p}</b></div>${d.bonus && d.bonus[i] ? `<div class="muted" style="text-align:right">🎉 პულკის ბონუსი: +${d.bonus[i]}</div>` : ''}`).join('')}
     <div class="muted" style="text-align:center">შემდეგი დარიგება მალე იწყება…</div>
     <button class="btn sec" data-act="score">ყველა ქულა</button>
   </div></div>`;
@@ -487,16 +569,16 @@ document.addEventListener('submit', e => {
 });
 
 document.addEventListener('click', async e => {
-  const el = e.target.closest('[data-act], .hand .pc');
+  const el = e.target.closest('[data-act], .hand .hc');
   if (!el) return;
   const act = el.dataset.act;
 
   // card in hand
-  if (!act && el.classList.contains('pc')) {
+  if (!act && el.classList.contains('hc')) {
     const g = st?.game;
     if (!g || g.phase !== 'playing' || g.turn !== st.seat) return;
     const id = el.dataset.id;
-    if (!g.legal.includes(id)) return toast(g.trick.length ? 'ამ კარტს ვერ ითამაშებ — უნდა მიჰყვე ნიშანს / კოზირს' : 'ამ კარტს ვერ ითამაშებ');
+    if (!g.legal.includes(id)) return toast(g.trick.length ? 'ამ კარტს ვერ ითამაშებ — უნდა მიჰყვე ნიშანს (ან დაკრა კოზირი)' : 'ამ კარტს ვერ ითამაშებ');
     if (selected !== id) { selected = id; return renderGame(); }
     const card = g.hand.find(c => c.id === id);
     if (card.s === 'J') { jokerPick = id; return renderGame(); }
@@ -527,7 +609,6 @@ document.addEventListener('click', async e => {
     case 'score': showScore = true; return renderGame();
     case 'score-close': showScore = false; return renderGame();
     case 'bid': return emit('game:bid', Number(el.dataset.n));
-    case 'trump': return emit('game:trump', el.dataset.s);
     case 'joker': {
       const id = jokerPick;
       return playCard(id, { mode: el.dataset.mode, suit: el.dataset.s });

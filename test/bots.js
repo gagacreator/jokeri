@@ -37,7 +37,6 @@ async function account(username, name) {
       if (!g || g.turn !== st.seat) return;
       setTimeout(() => {
         if (g.phase === 'bidding') s.emit('game:bid', pick([...Array(g.cards + 1).keys()].filter(n => n !== g.forbiddenBid)));
-        else if (g.phase === 'trump') s.emit('game:trump', pick(['S', 'C', 'D', 'H', 'N']));
         else if (g.phase === 'playing') s.emit('game:play', { id: pick(g.legal), mode: pick(['high', 'low']), suit: pick(['S', 'C', 'D', 'H']) });
       }, 700);
     });

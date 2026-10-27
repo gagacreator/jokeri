@@ -12,6 +12,8 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const TRICK_DELAY = Number(process.env.TRICK_DELAY ?? 1800);
 const DEAL_DELAY = Number(process.env.DEAL_DELAY ?? 5000);
+const DRAW_STEP = Number(process.env.DRAW_STEP ?? 1000); // ms per card in the ace draw
+const DRAW_END = Number(process.env.DRAW_END ?? 4500);
 const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || '').toLowerCase();
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -185,7 +187,9 @@ function schedule(t) {
   const g = t.game;
   if (!g) return;
   if (g.phase === 'finished') { t.status = 'finished'; return; }
-  const delay = g.phase === 'trickEnd' ? TRICK_DELAY : g.phase === 'dealEnd' ? DEAL_DELAY : null;
+  const delay = g.phase === 'draw' ? g.draw.seq.length * DRAW_STEP + DRAW_END
+    : g.phase === 'trickEnd' ? TRICK_DELAY
+    : g.phase === 'dealEnd' ? DEAL_DELAY : null;
   if (delay === null) return;
   timers.set(t.code, setTimeout(() => {
     G.advance(g);
@@ -261,11 +265,6 @@ io.on('connection', socket => {
   socket.on('game:bid', (n, cb) => withTable(cb, (t, seat) => {
     if (!t.game || seat < 0) throw new Error('თამაში არ მიდის');
     G.bid(t.game, seat, n);
-  }));
-
-  socket.on('game:trump', (suit, cb) => withTable(cb, (t, seat) => {
-    if (!t.game || seat < 0) throw new Error('თამაში არ მიდის');
-    G.chooseTrump(t.game, seat, suit);
   }));
 
   socket.on('game:play', (msg, cb) => withTable(cb, (t, seat) => {

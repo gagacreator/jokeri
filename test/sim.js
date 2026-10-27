@@ -26,7 +26,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 
 async function main() {
   const server = spawn('node', [path.join(__dirname, '..', 'server.js')], {
-    env: { ...process.env, PORT, DATA_DIR: dataDir, TRICK_DELAY: 0, DEAL_DELAY: 0 },
+    env: { ...process.env, PORT, DATA_DIR: dataDir, TRICK_DELAY: 0, DEAL_DELAY: 0, DRAW_STEP: 0, DRAW_END: 0 },
     stdio: 'inherit',
   });
   await new Promise(r => setTimeout(r, 800));
@@ -58,8 +58,6 @@ async function main() {
           if (g.phase === 'bidding') {
             const opts = [...Array(g.cards + 1).keys()].filter(n => n !== g.forbiddenBid);
             s.emit('game:bid', pick(opts), ack);
-          } else if (g.phase === 'trump') {
-            s.emit('game:trump', pick(['S', 'C', 'D', 'H', 'N']), ack);
           } else if (g.phase === 'playing') {
             const id = pick(g.legal);
             s.emit('game:play', { id, mode: pick(['high', 'low']), suit: pick(['S', 'C', 'D', 'H']) }, ack);
