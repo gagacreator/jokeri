@@ -87,6 +87,7 @@ function route() {
 }
 
 function leaveTableView() {
+  Voice.leaveTable();
   tableCode = null;
   st = null;
   selected = null;
@@ -198,12 +199,14 @@ async function loadTables() {
 function ensureSocket() {
   if (socket) return;
   socket = io({ auth: { token } });
+  Voice.attach(socket);
   socket.on('connect', () => {
     if (tableCode) socket.emit('table:join', tableCode, handleJoinResult);
   });
   socket.on('table:state', s => {
     if (s.code !== tableCode) return;
     st = s;
+    Voice.setState(s);
     const g = s.game;
     if (selected && !(g && g.legal.includes(selected))) selected = null;
     renderTable();
@@ -257,7 +260,7 @@ function renderLobby() {
       </div>
       <div class="logo">♠ ჯოკერი ♥<small>${missing ? `ელოდება კიდევ ${missing} მოთამაშეს` : 'იწყება…'}</small></div>
       <div class="slots">
-        ${st.players.map(p => p ? `<div class="slot"><span class="dot ${p.online ? '' : 'off'}"></span>${esc(p.name)}</div>` : '<div class="slot empty">თავისუფალია</div>').join('')}
+        ${st.players.map(p => p ? `<div class="slot" data-uid="${p.uid}"><span class="dot ${p.online ? '' : 'off'}"></span>${esc(p.name)}</div>` : '<div class="slot empty">თავისუფალია</div>').join('')}
       </div>
       <div class="card-box">
         <div class="muted">გაუგზავნე ლინკი მეგობრებს. როცა 4 მოთამაშე შეიკრიბება, თამაში ავტომატურად დაიწყება.</div>
@@ -316,7 +319,7 @@ function seatBox(g, seat, pos) {
   const bid = g.bids[seat];
   const online = st.players[seat]?.online;
   return `
-    <div class="seat ${pos} ${g.turn === seat ? 'turn' : ''}">
+    <div class="seat ${pos} ${g.turn === seat ? 'turn' : ''}" data-uid="${st.players[seat]?.uid || ''}">
       <div class="nm">${g.dealer === seat ? '<span class="dealer">D</span>' : ''}<span class="dot ${online ? '' : 'off'}"></span>${esc(name)}</div>
       <div class="st">${bid === null ? (g.phase === 'bidding' ? 'ფიქრობს…' : '') : `დაკვ. <b>${bid}</b> · აღ. <b>${g.tricksWon[seat]}</b>`}</div>
       <div class="minihand">${backs(g.handCounts[seat])}</div>
@@ -371,7 +374,7 @@ function renderDraw(g, mySeat) {
     const seat = seatAt(rel);
     const mine = seq.slice(0, shown).map((x, i) => ({ ...x, i })).filter(x => x.seat === seat);
     const win = done && g.draw.winner === seat;
-    return `<div class="seat ${posOf[rel]} ${win ? 'winner' : ''}">
+    return `<div class="seat ${posOf[rel]} ${win ? 'winner' : ''}" data-uid="${st.players[seat]?.uid || ''}">
       <div class="nm">${win ? '<span class="dealer">D</span>' : ''}${esc(g.names[seat])}</div>
       <div class="drawrow">${mine.map(x => card3d(x.card, {
         cls: `drawfly r${rel}`,

@@ -150,6 +150,15 @@ app.delete('/api/tables/:code', auth, adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
+// STUN is enough for most networks; set TURN_URL / TURN_USERNAME / TURN_CREDENTIAL for strict mobile NATs
+app.get('/api/ice', auth, (req, res) => {
+  const iceServers = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  if (process.env.TURN_URL) {
+    iceServers.push({ urls: process.env.TURN_URL.split(','), username: process.env.TURN_USERNAME, credential: process.env.TURN_CREDENTIAL });
+  }
+  res.json({ iceServers });
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/t/:code', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
@@ -169,7 +178,7 @@ function viewFor(t, uid) {
     status: t.status,
     seat,
     isAdmin: !!user?.isAdmin,
-    players: t.seats.map(s => (s ? { name: s.name, online: isOnline(s.userId) } : null)),
+    players: t.seats.map(s => (s ? { uid: s.userId, name: s.name, online: isOnline(s.userId) } : null)),
     game: t.game ? G.viewFor(t.game, seat) : null,
   };
 }
@@ -202,6 +211,16 @@ function schedule(t) {
 function startGame(t) {
   t.status = 'playing';
   t.game = G.newGame(t.seats.map(s => s.name));
+}
+
+const roomOf = t => 't:' + t.code;
+const voiceSockets = t => [...(io.sockets.adapter.rooms.get(roomOf(t)) || [])]
+  .map(id => io.sockets.sockets.get(id)).filter(s => s && s.voice);
+
+function leaveVoice(socket) {
+  if (!socket.voice) return;
+  socket.voice = false;
+  if (socket.tableCode) io.to('t:' + socket.tableCode).emit('voice:left', { uid: socket.user.id });
 }
 
 function userTables(uid) {
@@ -256,7 +275,24 @@ io.on('connection', socket => {
     cb?.({ ok: true });
   });
 
+  // ---- voice chat: the server only relays WebRTC signaling between seated players ----
+  socket.on('voice:join', cb => {
+    const t = tables.get(socket.tableCode);
+    if (!t || seatOf(t, uid) < 0) return cb?.({ error: 'მაგიდასთან არ ზიხარ' });
+    const peers = [...new Set(voiceSockets(t).map(s => s.user.id))].filter(id => id !== uid);
+    socket.voice = true;
+    socket.to(roomOf(t)).emit('voice:joined', { uid });
+    cb?.({ peers });
+  });
+  socket.on('voice:leave', () => leaveVoice(socket));
+  socket.on('voice:signal', msg => {
+    const t = tables.get(socket.tableCode);
+    if (!t || !socket.voice || typeof msg?.to !== 'string' || typeof msg.data !== 'object') return;
+    for (const s of voiceSockets(t)) if (s.user.id === msg.to) s.emit('voice:signal', { from: uid, data: msg.data });
+  });
+
   socket.on('table:leave', cb => withTable(cb, (t, seat) => {
+    leaveVoice(socket);
     if (t.status === 'lobby' && seat >= 0) t.seats[seat] = null;
     socket.leave('t:' + t.code);
     socket.tableCode = null;
@@ -281,6 +317,7 @@ io.on('connection', socket => {
   }));
 
   socket.on('disconnect', () => {
+    leaveVoice(socket);
     const set = conns.get(uid);
     set?.delete(socket);
     if (!set?.size) conns.delete(uid);

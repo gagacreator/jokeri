@@ -234,3 +234,18 @@ table.score tr.tot td { font-weight: 800; font-size: 14px; border-top: 2px solid
 
 #toast { position: fixed; left: 50%; bottom: 140px; transform: translateX(-50%); background: rgba(0,0,0,.85); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50; max-width: 90%; text-align: center; }
 #toast.show { opacity: 1; }
+
+/* ---------- voice chat ---------- */
+.voice { position: fixed; z-index: 15; display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.6); border-radius: 22px; padding: 4px; backdrop-filter: blur(4px); }
+.voice[hidden] { display: none; }
+.voice.ingame { left: max(10px, calc(50% - 250px)); top: calc(env(safe-area-inset-top, 0px) + 52px); }
+.voice.lobby { left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+.voice button { border: 0; border-radius: 18px; background: rgba(255,255,255,.16); color: #fff; font-size: 14px; font-weight: 700; padding: 8px 12px; min-height: 36px; }
+.voice .vmic.on { background: #2e7d32; }
+.voice .vmic.muted { background: #8e2b2b; }
+.voice .vmic.speaking { box-shadow: 0 0 0 3px #4cff88; }
+.voice .vleave { padding: 8px 10px; background: rgba(255,255,255,.1); }
+.voice .vcount { font-size: 13px; color: var(--muted); padding: 0 2px; }
+.seat.speaking { border-color: #4cff88; box-shadow: 0 0 14px rgba(76,255,136,.7); }
+.seat.speaking .nm::after { content: "🔊"; font-size: 11px; }
+.slot.speaking { box-shadow: 0 0 0 3px #4cff88; }
