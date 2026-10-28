@@ -505,3 +505,8 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .overlay.panel .numgrid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .overlay.panel .numgrid .btn { padding: 12px 0; font-size: 18px; }
 #chatfeed.ingame:not(.open) { width: min(46vw, 180px); }
+
+/* chat feed a bit higher so the bidding panel is never in its way */
+#chatfeed.ingame { bottom: calc(198px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed.ingame.two { bottom: calc(262px + env(safe-area-inset-bottom, 0px)); }
+.overlay.panel .sheet { width: min(52vw, 290px); }
