@@ -472,7 +472,7 @@ function renderGame() {
     <div class="game">
       <div class="felt3d">${g.trump && g.trump !== 'N' ? `<span class="tmark ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span>` : ''}</div>
       <div class="topbar">
-        <button class="iconbtn" data-act="score">ქულები</button>
+        <button class="iconbtn" data-act="score">ცხრილი</button>
         <div class="info">პულკა <b>${g.pulka + 1}</b>/4<br>${g.dealIdx + 1}/${g.totalDeals} · ${g.cards} კარტი</div>
         <div class="trump">${trumpChip(g)}</div>
       </div>
@@ -556,7 +556,7 @@ function scoreTable(g) {
 }
 
 function scoreHtml(g) {
-  return `<div class="overlay"><div class="sheet wide"><h3>ქულები</h3>${g.history.length ? scoreTable(g) : '<div class="muted" style="text-align:center">ქულები ჯერ არ არის</div>'}<button class="btn" data-act="score-close">დახურვა</button></div></div>`;
+  return `<div class="overlay"><div class="sheet wide"><h3>ცხრილი</h3>${g.history.length ? scoreTable(g) : '<div class="muted" style="text-align:center">ცხრილი ჯერ ცარიელია</div>'}<button class="btn" data-act="score-close">დახურვა</button></div></div>`;
 }
 
 function dealEndHtml(g) {
@@ -565,7 +565,7 @@ function dealEndHtml(g) {
     <h3>დარიგება დასრულდა</h3>
     ${d.points.map((p, i) => `<div class="rank"><span class="nm">${esc(g.names[i])}</span><span class="muted">${d.bids[i]}/${d.taken[i]}</span><b class="${p < 0 ? 'neg' : 'pos'}">${p > 0 ? '+' : ''}${p}</b></div>${d.bonus && d.bonus[i] ? `<div class="muted" style="text-align:right">🎉 პულკის ბონუსი: +${d.bonus[i]}</div>` : ''}`).join('')}
     <div class="muted" style="text-align:center">შემდეგი დარიგება მალე იწყება…</div>
-    <button class="btn sec" data-act="score">ყველა ქულა</button>
+    <button class="btn sec" data-act="score">ცხრილი</button>
   </div></div>`;
 }
 

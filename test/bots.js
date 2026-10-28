@@ -1,11 +1,13 @@
 'use strict';
-// Dev helper: creates a table as admin and seats N random-playing bots so you can
-// join the remaining seat(s) from a real browser.  Usage: node test/bots.js [bots=3] [base=http://localhost:3000]
+// Dev helper: seats N random-playing bots so you can join the remaining seat(s) from a real browser.
+// Usage: node test/bots.js [bots=3] [base=http://localhost:3000] [tableCode]
+// Without a tableCode it registers admin@test.com (becomes admin on a fresh server) and creates a table.
 
 const { io } = require('socket.io-client');
 
 const BOTS = Number(process.argv[2] || 3);
 const BASE = process.argv[3] || 'http://localhost:3000';
+const CODE = process.argv[4];
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 async function api(method, url, body, token) {
@@ -25,8 +27,11 @@ async function account(email, name) {
 }
 
 (async () => {
-  const admin = await account('admin@test.com', 'ადმინი');
-  const table = await api('POST', '/api/tables', { name: 'სატესტო მაგიდა' }, admin.token);
+  let table = { code: CODE };
+  if (!CODE) {
+    const admin = await account('admin@test.com', 'ადმინი');
+    table = await api('POST', '/api/tables', { name: 'სატესტო მაგიდა' }, admin.token);
+  }
   console.log(`${BASE}/t/${table.code}`);
   for (let i = 1; i <= BOTS; i++) {
     const u = await account(`bot${i}@test.com`, 'ბოტი' + i);
