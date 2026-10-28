@@ -668,3 +668,6 @@ table.score tr.pl td small.cut { color: #ff8a80; }
 .scoresheet table.score td.l, .scoresheet table.score th { font-weight: 500; }
 .scoresheet table.score tr.pl td { font-weight: 500; font-size: 13px; }
 .scoresheet table.score tfoot td { font-weight: 500; font-size: 14px; }
+.status .tmr { font-weight: 700; font-variant-numeric: tabular-nums; opacity: .85; }
+.status .tmr.late { color: #ff6b6b; opacity: 1; animation: tmrpulse .8s ease-in-out infinite; }
+@keyframes tmrpulse { 50% { opacity: .45; } }

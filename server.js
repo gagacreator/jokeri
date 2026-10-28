@@ -14,6 +14,7 @@ const TRICK_DELAY = Number(process.env.TRICK_DELAY ?? 1800);
 const JOKER_EXTRA = Number(process.env.JOKER_EXTRA ?? 1500); // extra pause so a joker's animation can be seen
 const DEAL_DELAY = Number(process.env.DEAL_DELAY ?? 5000);
 const DRAW_STEP = Number(process.env.DRAW_STEP ?? 1000); // ms per card in the ace draw
+const TURN_LIMIT = Number(process.env.TURN_LIMIT ?? 15000); // ms a player has before the table nags them
 const DRAW_END = Number(process.env.DRAW_END ?? 4500);
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.ADMIN_USERNAME || '').trim().toLowerCase();
 
@@ -150,6 +151,8 @@ app.delete('/api/tables/:code', auth, adminOnly, (req, res) => {
   if (!tables.delete(code)) return res.status(404).json({ error: 'მაგიდა ვერ მოიძებნა' });
   clearTimeout(timers.get(code));
   timers.delete(code);
+  clearTimeout(nagTimers.get(code));
+  nagTimers.delete(code);
   io.to('t:' + code).emit('table:closed');
   saveTables();
   res.json({ ok: true });
@@ -183,6 +186,7 @@ function viewFor(t, uid) {
     status: t.status,
     seat,
     isAdmin: !!user?.isAdmin,
+    turnLeft: turnLeft(t),
     spectator: seat < 0,
     watchers: watcherIds(t).length,
     players: t.seats.map(s => (s ? { uid: s.userId, name: s.name, online: isOnline(s.userId) } : null)),
@@ -194,7 +198,30 @@ function viewFor(t, uid) {
 const roomSockets = t => [...(io.sockets.adapter.rooms.get('t:' + t.code) || [])].map(id => io.sockets.sockets.get(id)).filter(Boolean);
 const watcherIds = t => [...new Set(roomSockets(t).map(s => s.user.id).filter(id => seatOf(t, id) < 0))];
 
+// 15 s per move: the clock restarts whenever the player to act changes; the server nags the table when it runs out
+const nagTimers = new Map();
+const ACTING = new Set(['bidding', 'trump', 'playing']);
+function trackTurn(t) {
+  const g = t.game;
+  const key = g && ACTING.has(g.phase) && g.turn !== null
+    ? `${g.phase}|${g.turn}|${g.trick.length}|${g.dealIdx}|${g.tricksWon.join()}` : null;
+  if (key === t.turnKey) return;
+  t.turnKey = key;
+  clearTimeout(nagTimers.get(t.code));
+  nagTimers.delete(t.code);
+  if (!key) { t.turnAt = null; return; }
+  t.turnAt = Date.now();
+  const nag = () => {
+    if (t.turnKey !== key) return;
+    io.to('t:' + t.code).emit('table:nag', { seat: g.turn, name: g.names[g.turn] });
+    nagTimers.set(t.code, setTimeout(nag, TURN_LIMIT));
+  };
+  nagTimers.set(t.code, setTimeout(nag, TURN_LIMIT));
+}
+const turnLeft = t => (t.turnAt ? Math.max(0, TURN_LIMIT - (Date.now() - t.turnAt)) : null);
+
 function broadcast(t) {
+  trackTurn(t);
   const socks = new Set(roomSockets(t));
   for (const s of t.seats) {
     if (!s) continue;
@@ -380,6 +407,6 @@ io.on('connection', socket => {
 });
 
 // resume pending timers after a restart
-for (const t of tables.values()) schedule(t);
+for (const t of tables.values()) { delete t.turnKey; delete t.turnAt; schedule(t); }
 
 server.listen(PORT, () => console.log(`Joker server on http://localhost:${PORT}`));

@@ -17,6 +17,57 @@ let jokerPick = null; // joker card id awaiting mode choice
 let jokerMode = null; // 'high' (მიმყავს) / 'low' (არ მიმყავს) chosen while leading, before picking the suit
 let showScore = false;
 let showLast = false;
+let turnDeadline = null; // performance.now() value at which the current player's 15 s run out
+
+// countdown next to the status line, updated without re-rendering the table
+setInterval(() => {
+  const el = document.querySelector('.status .tmr');
+  if (!el) return;
+  const left = turnDeadline === null ? null : Math.ceil((turnDeadline - performance.now()) / 1000);
+  el.textContent = left === null ? '' : ` · ${Math.max(0, left)}`;
+  el.classList.toggle('late', left !== null && left <= 5);
+}, 250);
+
+// a stern buzz, then the table scolds the slow player out loud (Georgian voice where the device has one)
+let audioCtx = null;
+function buzz() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime;
+    [0, .28].forEach(d => {
+      const o = audioCtx.createOscillator();
+      const gn = audioCtx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(150, t0 + d);
+      o.frequency.linearRampToValueAtTime(110, t0 + d + .22);
+      gn.gain.setValueAtTime(.0001, t0 + d);
+      gn.gain.exponentialRampToValueAtTime(.3, t0 + d + .02);
+      gn.gain.exponentialRampToValueAtTime(.0001, t0 + d + .24);
+      o.connect(gn).connect(audioCtx.destination);
+      o.start(t0 + d);
+      o.stop(t0 + d + .26);
+    });
+  } catch { /* audio is optional */ }
+}
+function scold() {
+  try {
+    if (!window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance('ეეე ბიჭო, დროზე მოდი რააა!');
+    u.lang = 'ka-GE';
+    const v = speechSynthesis.getVoices().find(x => /^ka/i.test(x.lang));
+    if (v) u.voice = v;
+    u.rate = 1.05;
+    u.pitch = 0.5; // low, stern
+    u.volume = 1;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch { /* speech is optional */ }
+}
+function nag(n) {
+  toast(`⏰ ${n.name}, დროზე!`);
+  buzz();
+  setTimeout(scold, 650);
+}
 let authMode = 'login';
 
 // ---------- helpers ----------
@@ -212,12 +263,14 @@ function ensureSocket() {
   socket.on('table:state', s => {
     if (s.code !== tableCode) return;
     st = s;
+    turnDeadline = s.turnLeft === null || s.turnLeft === undefined ? null : performance.now() + s.turnLeft;
     Voice.setState(s);
     Chat.setState(s);
     const g = s.game;
     if (selected && !(g && g.legal.includes(selected))) selected = null;
     renderTable();
   });
+  socket.on('table:nag', n => nag(n));
   socket.on('table:closed', () => {
     toast('მაგიდა დაიხურა');
     go('/');
@@ -563,7 +616,7 @@ function renderGame() {
         ${seatBox(g, seatAt(3), 'right')}
         ${dealing ? ghostsHtml(g, mySeat, dealT) : ''}
       </div>
-      <div class="status ${myTurn ? 'mine' : ''}">${spectator ? '👁 ' : ''}${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, spectator ? -1 : mySeat))}</div>
+      <div class="status ${myTurn ? 'mine' : ''}">${spectator ? '👁 ' : ''}${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, spectator ? -1 : mySeat))}<b class="tmr"></b></div>
       <div class="mine-info ${myTurn || (spectator && g.turn === 0) ? 'turn' : ''}">${avatar(mySeat, g.names[mySeat], g.dealer === mySeat ? '<span class="dealer">D</span>' : '', 'sm')}<span class="nm">${esc(g.names[mySeat])}</span>${tally(g, mySeat)}</div>
       ${spectator ? `<div class="hand spec" id="hand">${specCards(g.allHands[0], 'lg', 9)}</div>` : `<div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>`}
       ${lastTrickHtml(g)}
