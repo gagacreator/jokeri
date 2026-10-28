@@ -411,3 +411,31 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 /* chat button a bit lower */
 .chat.ingame { bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
 .game.two ~ .chat.ingame, .chat.ingame.two { bottom: calc(172px + env(safe-area-inset-bottom, 0px)); }
+
+/* ---------- joker reactions: smiley when it takes, waving hand when it doesn't ---------- */
+.jopt .jico { display: inline-block; font-size: 46px; }
+.jopt.take .jico { animation: jyes 1.3s ease-in-out infinite; }
+.jopt.give .jico { transform-origin: 65% 90%; animation: jwave .9s ease-in-out infinite; }
+@keyframes jyes { 0%, 100% { transform: translateY(0) scale(1) rotate(0); } 25% { transform: translateY(-8px) scale(1.18) rotate(-8deg); } 50% { transform: translateY(0) scale(1) rotate(0); } 75% { transform: translateY(-5px) scale(1.1) rotate(8deg); } }
+@keyframes jwave { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-24deg); } 50% { transform: rotate(24deg); } 80% { transform: rotate(-16deg); } }
+
+.slotc .jreact { position: absolute; left: 50%; top: -48px; width: 70px; height: 56px; margin-left: -35px; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5; animation: jreactLife 2.6s ease-out both; }
+.slotc .jreact b { font-size: 42px; line-height: 1; display: inline-block; filter: drop-shadow(0 3px 5px rgba(0,0,0,.5)); }
+.slotc .jreact.yes b { animation: yesPop 1.4s cubic-bezier(.2,1.4,.4,1) both; }
+.slotc .jreact.no b { transform-origin: 60% 95%; animation: noWave 2s ease-in-out both; }
+.slotc .jreact i { position: absolute; font-style: normal; font-size: 18px; opacity: 0; }
+.slotc .jreact i:nth-of-type(1) { left: -2px; top: 2px; animation: spark 1.2s ease-out .15s both; }
+.slotc .jreact i:nth-of-type(2) { right: -2px; top: 6px; animation: spark 1.2s ease-out .3s both; }
+.slotc .jreact i:nth-of-type(3) { left: 24px; top: -10px; animation: spark 1.2s ease-out .45s both; }
+@keyframes jreactLife { 0%, 72% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes yesPop { 0% { transform: scale(0) rotate(-30deg) translateY(14px); } 30% { transform: scale(1.55) rotate(10deg) translateY(-6px); } 50% { transform: scale(1) rotate(-6deg) translateY(0); } 70% { transform: scale(1.2) rotate(6deg) translateY(-4px); } 100% { transform: scale(1.05) rotate(0) translateY(0); } }
+@keyframes noWave { 0% { transform: scale(0) rotate(0); } 12% { transform: scale(1.25) rotate(0); } 24% { transform: scale(1) rotate(-28deg); } 40% { transform: rotate(28deg); } 56% { transform: rotate(-24deg); } 72% { transform: rotate(22deg); } 88%, 100% { transform: rotate(0); } }
+@keyframes spark { 0% { opacity: 0; transform: translateY(8px) scale(.3); } 40% { opacity: 1; transform: translateY(-6px) scale(1.2); } 100% { opacity: 0; transform: translateY(-20px) scale(.8); } }
+.center.ending .jreact { animation: jreactLife 2.6s ease-out both; }
+
+/* reaction sits on the side of the player who played the joker, so two jokers never overlap */
+.slotc.s0 .jreact { top: calc(100% + 28px); }
+.slotc.s1 .jreact { top: 6px; left: auto; right: calc(100% + 6px); margin-left: 0; }
+.slotc.s2 .jreact { top: -62px; }
+.slotc.s3 .jreact { top: 6px; left: calc(100% + 6px); margin-left: 0; }
+.slotc .jreact i { animation-delay: .55s !important; }
