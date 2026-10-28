@@ -702,3 +702,10 @@ button, .btn { touch-action: manipulation; }
 .bal b { font-size: 14px; margin-left: 2px; }
 .bal.grab { color: #ff9b8a; }
 .bal.atk { color: #8fd6ff; }
+
+/* last trick: always visible, bottom-left above the hand */
+.ltc, .game.two .ltc { left: max(8px, calc(50% - 252px)); right: auto; top: auto; bottom: calc(146px + env(safe-area-inset-bottom)); align-items: flex-start; gap: 3px; pointer-events: none; }
+.game.two .ltc { bottom: calc(212px + env(safe-area-inset-bottom)); }
+.lt-label { font-size: 10px; color: rgba(255,255,255,.7); text-shadow: 0 1px 3px #000; max-width: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-row { grid-template-columns: repeat(2, auto); gap: 3px; padding: 4px; background: rgba(0,0,0,.4); border: 0; border-radius: 10px; box-shadow: none; animation: none; }
+.lt-item .c3 { --ch: 44px; }

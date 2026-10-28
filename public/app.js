@@ -532,13 +532,11 @@ function trickHtml(g, mySeat) {
   }).join('');
 }
 
+// the previous trick stays visible in the bottom-left corner (winner highlighted)
 function lastTrickHtml(g) {
   if (!g.lastTrick) return '';
-  const items = g.lastTrick.map(t => `<div class="lt-item ${g.lastWinner === t.seat ? 'win' : ''}">${card3d(t.card)}<span>${esc(g.names[t.seat])}${g.lastWinner === t.seat ? ' ★' : ''}</span></div>`).join('');
-  return `<div class="ltc">
-    <button class="lt-toggle ${showLast ? 'open' : ''}" data-act="last">↺ ბოლო ხელი</button>
-    ${showLast ? `<div class="lt-row">${items}</div>` : ''}
-  </div>`;
+  const items = g.lastTrick.map(t => `<div class="lt-item ${g.lastWinner === t.seat ? 'win' : ''}" title="${esc(g.names[t.seat])}">${card3d(t.card)}</div>`).join('');
+  return `<div class="ltc"><div class="lt-label">ბოლო ხელი</div><div class="lt-row">${items}</div></div>`;
 }
 
 function statusText(g, mySeat) {
