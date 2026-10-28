@@ -280,6 +280,7 @@ function renderLobby() {
 
 // ---------- game ----------
 const DRAW_STEP = 1000; // must match the server's DRAW_STEP default
+const JOKER_EXTRA = 1500; // must match the server's JOKER_EXTRA default
 
 // time since an animation key was first rendered; lets re-renders continue animations instead of restarting them
 const seen = new Map();
@@ -360,11 +361,13 @@ function trickHtml(g, mySeat) {
   const wRel = g.trickWinner === null ? 0 : (g.trickWinner - mySeat + 4) % 4;
   // one shared clock for the sweep so all four cards leave together as a pile
   const se = g.phase === 'trickEnd' ? elapsed(`sw:${dealKey(g)}:${trickNo}`) : 0;
+  // a trick with a joker is held longer before it is swept away, so its animation is clearly visible
+  const sweepAt = 1150 + (g.trick.some(t => t.card.s === 'J') ? JOKER_EXTRA : 0);
   return g.trick.map((t, i) => {
     const rel = (t.seat - mySeat + 4) % 4;
     const e = elapsed(`tc:${dealKey(g)}:${trickNo}:${t.seat}`);
     // playIn runs right away, sweep (only while the trick is ending) starts late in the pause
-    const style = `animation-delay:${-e}ms,${1150 - se}ms`;
+    const style = `animation-delay:${-e}ms,${sweepAt - se}ms`;
     const joker = t.card.s === 'J';
     const take = joker && t.mode !== 'low';
     let badge = '';
@@ -373,9 +376,9 @@ function trickHtml(g, mySeat) {
       badge = `<span class="jbadge ${take ? 'take' : 'give'}">${take ? 'მიმყავს' : 'არ მიმყავს'}${suit}</span>`;
     }
     // take: the joker slams onto the pile from above; give: it slides in from below and ends up underneath
-    const z = joker && !take ? 0 : i + 1;
+    const z = joker ? (take ? 10 + i : 0) : i + 1; // a taking joker stays on top of the pile, a giving one stays under it
     const cls = `slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''} ${joker ? (take ? 'jtake' : 'jgive') : ''}`;
-    return `<div class="${cls}" style="z-index:${z}">${joker ? '<span class="jaura"></span>' : ''}${card3d(t.card, { style })}${badge}</div>`;
+    return `<div class="${cls}" style="z-index:${z}">${joker ? `<span class="jaura" style="animation-delay:${(take ? 480 : 700) - e}ms"></span>` : ''}${card3d(t.card, { style })}${badge}</div>`;
   }).join('');
 }
 
@@ -510,7 +513,7 @@ function renderGame() {
       <div class="board">
         ${seatBox(g, seatAt(2), 'top')}
         ${seatBox(g, seatAt(1), 'left')}
-        <div class="center ${g.phase === 'trickEnd' ? 'ending' : ''}">${dealing ? '<div class="deck"><i></i><i></i><i></i><i></i></div>' : ''}${trickHtml(g, mySeat)}</div>
+        <div class="center ${g.phase === 'trickEnd' ? 'ending' : ''} ${g.trick.some(t => t.card.s === 'J') ? 'hasjoker' : ''}">${dealing ? '<div class="deck"><i></i><i></i><i></i><i></i></div>' : ''}${trickHtml(g, mySeat)}</div>
         ${seatBox(g, seatAt(3), 'right')}
         ${dealing ? ghostsHtml(g, mySeat, dealT) : ''}
       </div>

@@ -11,6 +11,7 @@ const G = require('./game');
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const TRICK_DELAY = Number(process.env.TRICK_DELAY ?? 1800);
+const JOKER_EXTRA = Number(process.env.JOKER_EXTRA ?? 1500); // extra pause so a joker's animation can be seen
 const DEAL_DELAY = Number(process.env.DEAL_DELAY ?? 5000);
 const DRAW_STEP = Number(process.env.DRAW_STEP ?? 1000); // ms per card in the ace draw
 const DRAW_END = Number(process.env.DRAW_END ?? 4500);
@@ -201,7 +202,7 @@ function schedule(t) {
   if (!g) return;
   if (g.phase === 'finished') { t.status = 'finished'; return; }
   const delay = g.phase === 'draw' ? g.draw.seq.length * DRAW_STEP + DRAW_END
-    : g.phase === 'trickEnd' ? TRICK_DELAY
+    : g.phase === 'trickEnd' ? TRICK_DELAY + (g.trick.some(t => t.card.s === 'J') ? JOKER_EXTRA : 0)
     : g.phase === 'dealEnd' ? DEAL_DELAY : null;
   if (delay === null) return;
   timers.set(t.code, setTimeout(() => {
