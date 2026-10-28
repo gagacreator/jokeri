@@ -13,7 +13,7 @@ const Chat = (() => {
   let built = false;
   let panel, feedEl, inputEl, btnEl;
 
-  const SHOW_CLOSED = 5; // messages visible while folded
+  const SHOW_CLOSED = 6; // messages visible while folded
 
   const myId = () => (typeof me !== 'undefined' && me ? me.id : null);
 
@@ -42,7 +42,7 @@ const Chat = (() => {
 
   function fillFeed() {
     feedEl.innerHTML = '';
-    const list = open ? msgs.slice(-60) : msgs.slice(-SHOW_CLOSED); // folded: only the latest 5
+    const list = open ? msgs.slice(-60) : msgs.slice(-SHOW_CLOSED); // folded: only the latest 6
     list.forEach(m => feedEl.appendChild(bubble(m, open)));
     feedEl.scrollTop = feedEl.scrollHeight;
   }

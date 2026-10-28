@@ -541,3 +541,11 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 /* folded: truly one line per message (no half-cut second line) */
 #chatfeed:not(.open) .ctext { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 #chatfeed:not(.open) .cmsg { max-width: 100%; }
+
+/* six folded messages, a little tighter so they still fit */
+#chatfeed:not(.open) .cfeed { gap: 3px; }
+#chatfeed:not(.open) .ctext { padding: 4px 10px; }
+#chatfeed:not(.open) .cmsg:nth-last-child(5) { opacity: .34; }
+#chatfeed:not(.open) .cmsg:nth-last-child(6) { opacity: .22; }
+#chatfeed.ingame { bottom: calc(204px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed.ingame.two { bottom: calc(268px + env(safe-area-inset-bottom, 0px)); }
