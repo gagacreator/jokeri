@@ -303,7 +303,8 @@ io.on('connection', socket => {
     const t = tables.get(String(code || '').toLowerCase());
     if (!t) return cb?.({ error: 'მაგიდა ვერ მოიძებნა' });
     let seat = seatOf(t, uid);
-    if (seat < 0) mode = socket.user.isAdmin ? 'watch' : 'play'; // only the admin may watch
+    if (seat < 0 && socket.user.isAdmin) return cb?.({ error: 'ადმინი მაგიდას მხოლოდ ხსნის, თამაშს ვერ უყურებს' });
+    if (seat < 0) mode = 'play'; // nobody else may watch either
     if (seat < 0 && mode !== 'watch') {
       if (t.status !== 'lobby') return cb?.({ error: 'თამაში უკვე დაიწყო' });
       seat = t.seats.findIndex(s => !s);
@@ -397,7 +398,6 @@ io.on('connection', socket => {
   }));
 
   socket.on('game:rematch', cb => withTable(cb, t => {
-    if (!socket.user.isAdmin) throw new Error('მხოლოდ ადმინისტრატორისთვის');
     if (!t.game || t.game.phase !== 'finished') throw new Error('თამაში ჯერ არ დასრულებულა');
     startGame(t);
     schedule(t);

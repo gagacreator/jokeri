@@ -24,62 +24,21 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
   await wait(800);
   try {
     const users = [];
-    const root = await api('POST', '/api/register', { email: 'root@test.com', password: 'secret1', name: 'root' }); // first account = admin, never seated
-    for (const n of ['pa', 'pb', 'pc', 'pd']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1', name: n }));
+    const root = await api('POST', '/api/register', { email: 'root@test.com', password: 'secret1', name: 'root' }); // first account = admin
+    for (const n of ['pa', 'pb', 'pc', 'pd', 'late']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1', name: n }));
     const t = await api('POST', '/api/tables', { name: 's' }, root.token);
     const socks = users.map(u => io(BASE, { auth: { token: u.token } }));
     await Promise.all(socks.map(s => new Promise(r => s.on('connect', r))));
-
-    // the admin only opens tables: even asking to play, they just watch
     const rs = io(BASE, { auth: { token: root.token } });
     await new Promise(r => rs.on('connect', r));
-    let rstate = null;
-    rs.on('table:state', s => { rstate = s; });
     assert(!(await emit(rs, 'table:info', t.code)).canPlay, 'admin cannot play');
-    assert((await emit(rs, 'table:join', t.code, 'play')).ok, 'admin join ok');
-    await wait(200);
-    assert(rstate && rstate.spectator && rstate.seat === -1 && rstate.isAdmin, 'admin is a spectator');
-
-    // a non-admin cannot watch: asking to watch still seats them
-    const w = rs;
-    const getW = () => rstate;
+    assert((await emit(rs, 'table:join', t.code, 'play')).error, 'admin cannot enter (play)');
+    assert((await emit(rs, 'table:join', t.code, 'watch')).error, 'admin cannot enter (watch)');
     for (let i = 0; i < 4; i++) await emit(socks[i], 'table:join', t.code, 'play');
     await wait(300);
-    assert(rstate.game, 'watcher sees the game start');
-    assert(rstate.players.every(p => p && p.name), 'seats full, watcher took none');
-    assert(rstate.watchers === 1, 'watchers count (admin only)');
-
-    // deal is made after the draw; wait for hands
-    for (let i = 0; i < 120 && rstate.game.phase === 'draw'; i++) await wait(500);
-    assert(rstate.game.phase !== 'draw', 'past draw');
-    assert(rstate.game.hand.length === 0 && rstate.game.legal.length === 0, 'spectator has no own hand');
-    assert(rstate.game.allHands.length === 4 && rstate.game.allHands.every((h, i) => h.length === rstate.game.handCounts[i]), 'spectator sees all hands');
-    let ownView = null;
-    socks[0].on('table:state', s => { ownView = s; });
-    await emit(socks[0], 'table:join', t.code, 'play');
-    await wait(200);
-    assert(ownView && ownView.game.allHands === null, 'players never get other hands');
-
-    const late = await emit(w, 'table:info', t.code);
-    assert(!late.canPlay, 'cannot sit after start');
-    await emit(w, 'table:join', t.code, 'play'); await wait(100);
-    assert(rstate.seat === -1, 'still no seat after start');
-
-    const got = [];
-    socks[0].on('chat:msg', m => got.push(m));
-    assert((await emit(w, 'chat:send', 'მაყურებელი')).ok, 'spectator chat');
-    await wait(300);
-    assert(got.some(m => m.text === 'მაყურებელი' && m.name === 'root'), 'players read spectator chat');
-    assert((await emit(w, 'chat:history')).messages.length === 1, 'spectator history');
-    assert((await emit(w, 'voice:join')).peers, 'spectator voice join');
-    assert((await emit(w, 'game:play', { id: 'x' })).error, 'spectator cannot play');
-    assert((await emit(w, 'game:bid', 1)).error, 'spectator cannot bid');
+    // nobody else may watch: asking to watch a started table is refused
+    assert((await emit(socks[4], 'table:join', t.code, 'watch')).error, 'late guest cannot watch');
+    assert((await emit(rs, 'table:join', t.code, 'watch')).error, 'admin still refused after start');
     console.log('OK spectator');
-  } catch (e) {
-    console.error(e.message);
-    process.exitCode = 1;
-  } finally {
-    server.kill();
-    process.exit();
-  }
+  } catch (e) { console.error(e.message); process.exitCode = 1; } finally { server.kill(); process.exit(); }
 })();

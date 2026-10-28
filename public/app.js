@@ -351,7 +351,7 @@ function startEntry() {
   socket.emit('table:info', code, info => {
     if (code !== tableCode) return;
     if (info?.error) return handleJoinResult(info);
-    joinAs(info.seated || !info.admin ? 'play' : 'watch'); // watching is for the admin only
+    joinAs('play'); // no watching; the server refuses the admin
   });
 }
 
@@ -761,7 +761,7 @@ function finishedHtml(g) {
   return `<div class="overlay mid"><div class="sheet">
     <h3>თამაში დასრულდა</h3>
     ${order.map((o, k) => `<div class="rank ${k === 0 ? 'first' : ''}"><span class="n">${['🥇', '🥈', '🥉', '4'][k]}</span><span class="nm">${esc(g.names[o.i])}</span><b class="${o.t < 0 ? 'neg' : ''}">${o.t}</b></div>`).join('')}
-    ${st.isAdmin ? '<button class="btn" data-act="rematch">ახალი თამაში</button>' : ''}
+    <button class="btn" data-act="rematch">ახალი თამაში</button>
     <button class="btn sec" data-act="home">მთავარი გვერდი</button>
   </div></div>`;
 }

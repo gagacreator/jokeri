@@ -28,9 +28,7 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
     const socks = users.map(u => io(BASE, { auth: { token: u.token } }));
     await Promise.all(socks.map(s => new Promise(r => s.on('connect', r))));
     for (let i = 0; i < 4; i++) await emit(socks[i], 'table:join', t.code, 'play');
-    const rs = io(BASE, { auth: { token: root.token } });
-    await new Promise(r => rs.on('connect', r));
-    await emit(rs, 'table:join', t.code, 'watch');
+    const rs = socks[3];
     const got = [];
     rs.on('sound:play', m => got.push(m));
     assert((await emit(socks[0], 'sound:send', { seat: 2, id: 'joker' })).ok, 'send ok');
@@ -38,7 +36,6 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
     assert(got.length === 1 && got[0].to === 2 && got[0].from === 0 && got[0].id === 'joker', 'everyone hears it');
     assert((await emit(socks[0], 'sound:send', { seat: 2, id: 'bicho' })).error, 'throttled');
     assert((await emit(socks[1], 'sound:send', { seat: 2, id: 'evil.mp3' })).error, 'unknown id refused');
-    assert((await emit(rs, 'sound:send', { seat: 2, id: 'bicho' })).error, 'spectators cannot send');
     console.log('OK sound');
   } catch (e) { console.error(e.message); process.exitCode = 1; } finally { server.kill(); process.exit(); }
 })();
