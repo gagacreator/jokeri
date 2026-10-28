@@ -351,17 +351,7 @@ function startEntry() {
   socket.emit('table:info', code, info => {
     if (code !== tableCode) return;
     if (info?.error) return handleJoinResult(info);
-    if (info.seated) return joinAs('play');
-    if (!info.canPlay) return joinAs('watch');
-    app.innerHTML = `
-      <div class="screen">
-        <div class="logo">♠ ჯოკერი ♥<small>${esc(info.name)}</small></div>
-        <div class="card-box">
-          <div class="muted">${info.players.length ? 'მაგიდასთან ზის: ' + info.players.map(esc).join(', ') : 'მაგიდა ცარიელია'}</div>
-          <button class="btn" data-act="choose-play">თამაში მინდა</button>
-          <button class="btn sec" data-act="choose-watch">👁 ყურება მინდა</button>
-        </div>
-      </div>`;
+    joinAs(info.seated || !info.admin ? 'play' : 'watch'); // watching is for the admin only
   });
 }
 

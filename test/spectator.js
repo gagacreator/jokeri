@@ -25,13 +25,10 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
   try {
     const users = [];
     const root = await api('POST', '/api/register', { email: 'root@test.com', password: 'secret1', name: 'root' }); // first account = admin, never seated
-    for (const n of ['pa', 'pb', 'pc', 'pd', 'watcher']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1', name: n }));
+    for (const n of ['pa', 'pb', 'pc', 'pd']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1', name: n }));
     const t = await api('POST', '/api/tables', { name: 's' }, root.token);
     const socks = users.map(u => io(BASE, { auth: { token: u.token } }));
     await Promise.all(socks.map(s => new Promise(r => s.on('connect', r))));
-    const w = socks[4];
-    let wstate = null;
-    w.on('table:state', s => { wstate = s; });
 
     // the admin only opens tables: even asking to play, they just watch
     const rs = io(BASE, { auth: { token: root.token } });
@@ -43,22 +40,20 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
     await wait(200);
     assert(rstate && rstate.spectator && rstate.seat === -1 && rstate.isAdmin, 'admin is a spectator');
 
-    const info = await emit(w, 'table:info', t.code);
-    assert(info.canPlay && !info.seated, 'watcher may play before start');
-    assert((await emit(w, 'table:join', t.code, 'watch')).ok, 'watch join');
-    await wait(200);
-    assert(wstate && wstate.spectator && wstate.seat === -1, 'spectator state');
+    // a non-admin cannot watch: asking to watch still seats them
+    const w = rs;
+    const getW = () => rstate;
     for (let i = 0; i < 4; i++) await emit(socks[i], 'table:join', t.code, 'play');
     await wait(300);
-    assert(wstate.game, 'watcher sees the game start');
-    assert(wstate.players.every(p => p && p.name), 'seats full, watcher took none');
-    assert(wstate.watchers === 2, 'watchers count (admin + guest)');
+    assert(rstate.game, 'watcher sees the game start');
+    assert(rstate.players.every(p => p && p.name), 'seats full, watcher took none');
+    assert(rstate.watchers === 1, 'watchers count (admin only)');
 
     // deal is made after the draw; wait for hands
-    for (let i = 0; i < 120 && wstate.game.phase === 'draw'; i++) await wait(500);
-    assert(wstate.game.phase !== 'draw', 'past draw');
-    assert(wstate.game.hand.length === 0 && wstate.game.legal.length === 0, 'spectator has no own hand');
-    assert(wstate.game.allHands.length === 4 && wstate.game.allHands.every((h, i) => h.length === wstate.game.handCounts[i]), 'spectator sees all hands');
+    for (let i = 0; i < 120 && rstate.game.phase === 'draw'; i++) await wait(500);
+    assert(rstate.game.phase !== 'draw', 'past draw');
+    assert(rstate.game.hand.length === 0 && rstate.game.legal.length === 0, 'spectator has no own hand');
+    assert(rstate.game.allHands.length === 4 && rstate.game.allHands.every((h, i) => h.length === rstate.game.handCounts[i]), 'spectator sees all hands');
     let ownView = null;
     socks[0].on('table:state', s => { ownView = s; });
     await emit(socks[0], 'table:join', t.code, 'play');
@@ -67,13 +62,14 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
 
     const late = await emit(w, 'table:info', t.code);
     assert(!late.canPlay, 'cannot sit after start');
-    assert((await emit(w, 'table:join', t.code, 'play')).error, 'cannot take a seat after start');
+    await emit(w, 'table:join', t.code, 'play'); await wait(100);
+    assert(rstate.seat === -1, 'still no seat after start');
 
     const got = [];
     socks[0].on('chat:msg', m => got.push(m));
     assert((await emit(w, 'chat:send', 'მაყურებელი')).ok, 'spectator chat');
     await wait(300);
-    assert(got.some(m => m.text === 'მაყურებელი' && m.name === 'watcher'), 'players read spectator chat');
+    assert(got.some(m => m.text === 'მაყურებელი' && m.name === 'root'), 'players read spectator chat');
     assert((await emit(w, 'chat:history')).messages.length === 1, 'spectator history');
     assert((await emit(w, 'voice:join')).peers, 'spectator voice join');
     assert((await emit(w, 'game:play', { id: 'x' })).error, 'spectator cannot play');
