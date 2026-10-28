@@ -526,3 +526,18 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 
 /* right player lowered (still clear of the chat messages) */
 .seat.right { margin-top: 74px; }
+
+/* right player level with the left one (face to face); chat feed back down by the chat button */
+.seat.right { align-self: center; margin-top: 0; }
+#chatfeed.ingame { bottom: calc(156px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed.ingame.two { bottom: calc(220px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed:not(.open) .ctext { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* folded chat: one line per message so five messages fit between the side players and the status line */
+#chatfeed:not(.open) .ctext { -webkit-line-clamp: 1; }
+#chatfeed.ingame { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed.ingame.two { bottom: calc(270px + env(safe-area-inset-bottom, 0px)); }
+
+/* folded: truly one line per message (no half-cut second line) */
+#chatfeed:not(.open) .ctext { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+#chatfeed:not(.open) .cmsg { max-width: 100%; }
