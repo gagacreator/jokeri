@@ -366,18 +366,16 @@ function trickHtml(g, mySeat) {
     // playIn runs right away, sweep (only while the trick is ending) starts late in the pause
     const style = `animation-delay:${-e}ms,${1150 - se}ms`;
     const joker = t.card.s === 'J';
+    const take = joker && t.mode !== 'low';
     let badge = '';
     if (joker) {
-      const high = t.mode !== 'low';
       const suit = t.suit ? `<i class="${isRed(t.suit) ? 'red' : ''}">${SYM[t.suit]}</i>` : '';
-      badge = `<span class="jbadge ${high ? 'take' : 'give'}"><em>${high ? '🫴' : '🖐️'}</em>${high ? 'მიმყავს' : 'არ მიმყავს'}${suit}</span>`;
+      badge = `<span class="jbadge ${take ? 'take' : 'give'}">${take ? 'მიმყავს' : 'არ მიმყავს'}${suit}</span>`;
     }
-    // everyone sees the joker's reaction: a happy emoji when it takes the trick, a waving "no" hand when it doesn't
-    const react = joker
-      ? `<span class="jreact ${t.mode === 'low' ? 'no' : 'yes'}" style="animation-delay:${400 - e}ms"><b style="animation-delay:${400 - e}ms">${t.mode === 'low' ? '🖐️' : '🫴'}</b></span>`
-      : '';
-    const cls = `slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''} ${joker ? (t.mode === 'low' ? 'jgive' : 'jtake') : ''}`;
-    return `<div class="${cls}" style="z-index:${i + 1}">${joker ? '<span class="jaura"></span>' : ''}${card3d(t.card, { style })}${badge}${react}</div>`;
+    // take: the joker slams onto the pile from above; give: it slides in from below and ends up underneath
+    const z = joker && !take ? 0 : i + 1;
+    const cls = `slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''} ${joker ? (take ? 'jtake' : 'jgive') : ''}`;
+    return `<div class="${cls}" style="z-index:${z}">${joker ? '<span class="jaura"></span>' : ''}${card3d(t.card, { style })}${badge}</div>`;
   }).join('');
 }
 
@@ -562,8 +560,8 @@ function jokerHtml(g) {
   return `<div class="overlay jover"><div class="sheet jsheet">
     <div class="jhead">${card3d({ id: 'J1', s: 'J', r: 15 }, { cls: 'jspin' })}<h3>ჯოკერი</h3></div>
     <div class="jopts">
-      <button class="jopt take ${jokerMode === 'high' ? 'on' : ''}" data-act="jmode" data-mode="high"><span class="jico">🫴</span><b>მიმყავს</b><small>ხელს ვიღებ</small></button>
-      <button class="jopt give ${jokerMode === 'low' ? 'on' : ''}" data-act="jmode" data-mode="low"><span class="jico">🖐️</span><b>არ მიმყავს</b><small>ხელს ვუთმობ</small></button>
+      <button class="jopt take ${jokerMode === 'high' ? 'on' : ''}" data-act="jmode" data-mode="high"><span class="jico mini take"><i class="mc base"></i><i class="mc jk">J</i><i class="ring"></i></span><b>მიმყავს</b><small>ხელს ვიღებ</small></button>
+      <button class="jopt give ${jokerMode === 'low' ? 'on' : ''}" data-act="jmode" data-mode="low"><span class="jico mini give"><i class="mc jk">J</i><i class="mc base"></i></span><b>არ მიმყავს</b><small>ხელს ვუთმობ</small></button>
     </div>
     ${suits}
     <button class="jcancel" data-act="joker-cancel">გაუქმება</button>
