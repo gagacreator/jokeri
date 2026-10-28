@@ -331,7 +331,36 @@ function viewFor(g, seat) {
   };
 }
 
+// Recompute every finished deal / pulka of a saved game with the current scoring rules.
+function rescore(g) {
+  if (!g || !g.history) return;
+  g.totals = [0, 0, 0, 0];
+  g.bonuses = {};
+  g.cuts = {};
+  g.history.forEach((h, k) => {
+    h.points = h.bids.map((b, i) => scoreFor(b, h.taken[i], h.cards));
+    delete h.bonus; delete h.cut;
+    h.points.forEach((p, i) => { g.totals[i] += p; });
+    const next = g.history[k + 1];
+    if (next ? next.pulka === h.pulka : (DEALS[h.deal + 1] && DEALS[h.deal + 1].pulka === h.pulka)) return;
+    const rows = g.history.filter(r => r.pulka === h.pulka);
+    const done = i => rows.every(r => r.bids[i] === r.taken[i]);
+    const bonus = [0, 1, 2, 3].map(i => (done(i) ? h.points[i] : 0));
+    const winners = [0, 1, 2, 3].filter(done);
+    const cut = [0, 0, 0, 0];
+    if (winners.length === 1) for (let i = 0; i < 4; i++) if (i !== winners[0]) cut[i] = Math.max(0, ...rows.map(r => r.points[i]));
+    bonus.forEach((b, i) => { g.totals[i] += b - cut[i]; });
+    if (bonus.some(Boolean)) { g.bonuses[h.pulka] = bonus; h.bonus = bonus; }
+    if (cut.some(Boolean)) { g.cuts[h.pulka] = cut; h.cut = cut; }
+  });
+  if (g.dealSummary) {
+    const h = g.history.find(r => r.deal === g.dealSummary.deal);
+    if (h) g.dealSummary = h;
+  }
+}
+
 module.exports = {
+  rescore,
   SUITS, DEALS, newGame, bid, chooseTrump, play, advance, legalPlays,
   viewFor, trickWinner, scoreFor, ledSuit, buildDeck,
 };

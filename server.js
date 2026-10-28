@@ -34,6 +34,7 @@ function save(file, obj) {
 
 const db = load(DB_FILE, { users: {}, sessions: {} });
 const tables = new Map(Object.entries(load(TABLES_FILE, {})));
+for (const t of tables.values()) G.rescore(t.game); // saved games follow the current scoring rules
 const timers = new Map();
 const conns = new Map(); // userId -> Set<socket>
 
