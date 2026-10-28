@@ -370,11 +370,11 @@ function trickHtml(g, mySeat) {
     if (joker) {
       const high = t.mode !== 'low';
       const suit = t.suit ? `<i class="${isRed(t.suit) ? 'red' : ''}">${SYM[t.suit]}</i>` : '';
-      badge = `<span class="jbadge ${high ? 'take' : 'give'}"><em>${high ? '🤩' : '🖐️'}</em>${high ? 'მიმყავს' : 'არ მიმყავს'}${suit}</span>`;
+      badge = `<span class="jbadge ${high ? 'take' : 'give'}"><em>${high ? '🫴' : '🖐️'}</em>${high ? 'მიმყავს' : 'არ მიმყავს'}${suit}</span>`;
     }
     // everyone sees the joker's reaction: a happy emoji when it takes the trick, a waving "no" hand when it doesn't
     const react = joker
-      ? `<span class="jreact ${t.mode === 'low' ? 'no' : 'yes'}" style="animation-delay:${400 - e}ms"><b style="animation-delay:${400 - e}ms">${t.mode === 'low' ? '🖐️' : '🤩'}</b>${t.mode === 'low' ? '' : `<i>✨</i><i>✨</i><i>⭐</i>`}</span>`
+      ? `<span class="jreact ${t.mode === 'low' ? 'no' : 'yes'}" style="animation-delay:${400 - e}ms"><b style="animation-delay:${400 - e}ms">${t.mode === 'low' ? '🖐️' : '🫴'}</b></span>`
       : '';
     const cls = `slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''} ${joker ? (t.mode === 'low' ? 'jgive' : 'jtake') : ''}`;
     return `<div class="${cls}" style="z-index:${i + 1}">${joker ? '<span class="jaura"></span>' : ''}${card3d(t.card, { style })}${badge}${react}</div>`;
@@ -562,7 +562,7 @@ function jokerHtml(g) {
   return `<div class="overlay jover"><div class="sheet jsheet">
     <div class="jhead">${card3d({ id: 'J1', s: 'J', r: 15 }, { cls: 'jspin' })}<h3>ჯოკერი</h3></div>
     <div class="jopts">
-      <button class="jopt take ${jokerMode === 'high' ? 'on' : ''}" data-act="jmode" data-mode="high"><span class="jico">🤩</span><b>მიმყავს</b><small>ხელს ვიღებ</small></button>
+      <button class="jopt take ${jokerMode === 'high' ? 'on' : ''}" data-act="jmode" data-mode="high"><span class="jico">🫴</span><b>მიმყავს</b><small>ხელს ვიღებ</small></button>
       <button class="jopt give ${jokerMode === 'low' ? 'on' : ''}" data-act="jmode" data-mode="low"><span class="jico">🖐️</span><b>არ მიმყავს</b><small>ხელს ვუთმობ</small></button>
     </div>
     ${suits}

@@ -443,3 +443,22 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 /* a playable joker in hand glows so you notice you can use it */
 .hc.jk.ok.myturn .c3 .front { animation: jglow 1.2s ease-in-out infinite alternate; }
 @keyframes jglow { from { box-shadow: 0 0 0 2px #ffd25a, 0 0 8px rgba(255,200,60,.6); } to { box-shadow: 0 0 0 3px #ffe9a3, 0 0 22px rgba(255,200,60,1); } }
+
+/* "მიმყავს": a beckoning hand (palm up) that pulls toward its owner; "არ მიმყავს" keeps the waving hand */
+.slotc.s0 { --bx: 0px; --by: 16px; }
+.slotc.s1 { --bx: -16px; --by: 0px; }
+.slotc.s2 { --bx: 0px; --by: -16px; }
+.slotc.s3 { --bx: 16px; --by: 0px; }
+.slotc .jreact.yes b { transform-origin: 50% 90%; animation: beckon 2s ease-in-out both; }
+@keyframes beckon {
+  0% { transform: scale(0) translate(0, 0) rotate(0); }
+  12% { transform: scale(1.3) translate(0, 0) rotate(0); }
+  24% { transform: scale(1) translate(var(--bx), var(--by)) rotate(-16deg); }
+  38% { transform: scale(1) translate(0, 0) rotate(8deg); }
+  52% { transform: scale(1) translate(var(--bx), var(--by)) rotate(-16deg); }
+  66% { transform: scale(1) translate(0, 0) rotate(8deg); }
+  80% { transform: scale(1) translate(var(--bx), var(--by)) rotate(-16deg); }
+  100% { transform: scale(1) translate(0, 0) rotate(0); }
+}
+.jopt.take .jico { transform-origin: 50% 90%; animation: beckonSheet 1.1s ease-in-out infinite; }
+@keyframes beckonSheet { 0%, 100% { transform: translateY(0) rotate(8deg); } 50% { transform: translateY(8px) rotate(-16deg); } }
