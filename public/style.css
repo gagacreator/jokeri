@@ -491,3 +491,17 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 #chatfeed.ingame:not(.open) .cfeed { max-height: 150px; justify-content: flex-start; }
 #chatfeed.ingame.open { width: min(70vw, 280px); }
 #chatfeed.ingame.open .cfeed { max-height: 30vh; }
+
+/* chat feed sits right above the chat button, newest message nearest to it; at most 5 messages */
+#chatfeed.ingame { top: auto; bottom: calc(160px + env(safe-area-inset-bottom, 0px)); justify-content: flex-end; width: min(58vw, 235px); z-index: 31; }
+#chatfeed.ingame.two { bottom: calc(224px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed.ingame:not(.open) .cfeed { max-height: none; overflow: visible; justify-content: flex-end; }
+#chatfeed.ingame.open { width: min(78vw, 300px); }
+#chatfeed.ingame.open .cfeed { max-height: 200px; justify-content: flex-start; }
+
+/* bidding / trump panel leaves the lower right free for the chat messages */
+.overlay.panel { justify-content: flex-start; padding-left: 8px; }
+.overlay.panel .sheet { width: min(54vw, 300px); }
+.overlay.panel .numgrid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.overlay.panel .numgrid .btn { padding: 12px 0; font-size: 18px; }
+#chatfeed.ingame:not(.open) { width: min(46vw, 180px); }

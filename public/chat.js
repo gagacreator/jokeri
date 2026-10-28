@@ -42,7 +42,7 @@ const Chat = (() => {
 
   function fillFeed() {
     feedEl.innerHTML = '';
-    const list = open ? msgs.slice(-60) : msgs.slice(-SHOW_CLOSED);
+    const list = open ? msgs.slice(-60) : msgs.slice(-SHOW_CLOSED); // folded: only the latest 5
     list.forEach(m => feedEl.appendChild(bubble(m, open)));
     feedEl.scrollTop = feedEl.scrollHeight;
   }
