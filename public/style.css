@@ -554,3 +554,16 @@ table.score td.cell.empty { background: rgba(255,255,255,.03); }
 table.score tr.pl td small.cut { color: #ff8a80; }
 .hand.spec { align-items:center; pointer-events:none; opacity:.85; }
 .hand.spec .minihand { display:flex; justify-content:center; transform:scale(1.25); transform-origin:bottom center; }
+/* spectator: every hand face up */
+.spec-hand { margin-top: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.spec-row { display: flex; justify-content: center; }
+.sc { display: flex; flex-direction: column; align-items: flex-start; width: 22px; height: 30px; padding: 2px 0 0 3px; margin-left: -12px; border-radius: 4px; background: #fbf7ea; color: #1b1b1b; box-shadow: 0 1px 3px #000a; font-style: normal; font-size: 10px; line-height: 1.05; }
+.sc:first-child { margin-left: 0; }
+.sc b { font-size: 10px; font-weight: 800; }
+.sc.red { color: #c62828; }
+.sc.jk { align-items: center; padding: 6px 0 0; font-size: 14px; background: #f3e1ff; }
+.spec-hand.lg { margin-top: 0; }
+.spec-hand.lg .sc { width: 34px; height: 46px; margin-left: -17px; font-size: 15px; padding: 3px 0 0 4px; }
+.spec-hand.lg .sc b { font-size: 15px; }
+.spec-hand.lg .sc.jk { font-size: 20px; padding-top: 10px; }
+.hand.spec { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }

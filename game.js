@@ -320,6 +320,7 @@ function viewFor(g, seat) {
     tricksWon: g.tricksWon,
     handCounts: g.hands.map(h => h.length),
     hand: seat >= 0 ? sortHand(g.hands[seat]) : [],
+    allHands: seat < 0 ? g.hands.map(sortHand) : null, // spectators see every hand
     legal: seat >= 0 ? legalPlays(g, seat) : [],
     forbiddenBid: seat >= 0 && g.turn === seat ? forbiddenBid(g, seat) : null,
     totals: g.totals,

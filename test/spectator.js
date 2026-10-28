@@ -1,5 +1,5 @@
 'use strict';
-// Spectators: watch without a seat, never see hands, can chat and join voice signaling.
+// Spectators: watch without a seat, see every hand (players don't), can chat and join voice signaling.
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -46,9 +46,13 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
     // deal is made after the draw; wait for hands
     for (let i = 0; i < 120 && wstate.game.phase === 'draw'; i++) await wait(500);
     assert(wstate.game.phase !== 'draw', 'past draw');
-    assert(wstate.game.hand.length === 0 && wstate.game.legal.length === 0, 'spectator sees no cards');
-    assert(wstate.game.handCounts.some(n => n > 0), 'but sees counts');
-    assert(!JSON.stringify(wstate).includes('"hands"'), 'no hands leaked');
+    assert(wstate.game.hand.length === 0 && wstate.game.legal.length === 0, 'spectator has no own hand');
+    assert(wstate.game.allHands.length === 4 && wstate.game.allHands.every((h, i) => h.length === wstate.game.handCounts[i]), 'spectator sees all hands');
+    let ownView = null;
+    socks[0].on('table:state', s => { ownView = s; });
+    await emit(socks[0], 'table:join', t.code, 'play');
+    await wait(200);
+    assert(ownView && ownView.game.allHands === null, 'players never get other hands');
 
     const late = await emit(w, 'table:info', t.code);
     assert(!late.canPlay, 'cannot sit after start');

@@ -335,6 +335,16 @@ function card3d(c, { cls = '', style = '', attrs = '' } = {}) {
   return `<div class="c3 ${red} ${cls}" style="${style}" ${attrs}><div class="cf front"><span class="cr">${rank}<br>${SYM[c.s]}</span><span class="cc">${SYM[c.s]}</span><span class="cr br">${rank}<br>${SYM[c.s]}</span></div><div class="cf back"></div></div>`;
 }
 
+// spectators see every hand face up: small overlapping chips (rank over suit)
+function specCards(cards, size = '', perRow = 5) {
+  const chip = c => c.s === 'J'
+    ? '<i class="sc jk">🃏</i>'
+    : `<i class="sc ${isRed(c.s) ? 'red' : ''}"><b>${RANKS[c.r] || c.r}</b>${SYM[c.s]}</i>`;
+  const rows = [];
+  for (let i = 0; i < cards.length; i += perRow) rows.push(cards.slice(i, i + perRow));
+  return `<div class="spec-hand ${size}">${rows.map(r => `<div class="spec-row">${r.map(chip).join('')}</div>`).join('')}</div>`;
+}
+
 function backs(n) {
   return '<i></i>'.repeat(Math.min(n, 9));
 }
@@ -382,7 +392,7 @@ function seatBox(g, seat, pos) {
       ${avatar(seat, g.names[seat], `${dealer}<span class="dot ${online ? '' : 'off'}"></span>`)}
       <div class="nm">${esc(g.names[seat])}</div>
       ${tally(g, seat)}
-      <div class="minihand">${backs(g.handCounts[seat])}</div>
+      ${g.allHands ? specCards(g.allHands[seat]) : `<div class="minihand">${backs(g.handCounts[seat])}</div>`}
     </div>`;
 }
 
@@ -546,7 +556,7 @@ function renderGame() {
       </div>
       <div class="status ${myTurn ? 'mine' : ''}">${spectator ? '👁 ' : ''}${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, spectator ? -1 : mySeat))}</div>
       <div class="mine-info ${myTurn || (spectator && g.turn === 0) ? 'turn' : ''}">${avatar(mySeat, g.names[mySeat], g.dealer === mySeat ? '<span class="dealer">D</span>' : '', 'sm')}<span class="nm">${esc(g.names[mySeat])}</span>${tally(g, mySeat)}</div>
-      ${spectator ? `<div class="hand spec" id="hand"><div class="minihand">${backs(g.handCounts[0])}</div></div>` : `<div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>`}
+      ${spectator ? `<div class="hand spec" id="hand">${specCards(g.allHands[0], 'lg', 9)}</div>` : `<div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>`}
       ${lastTrickHtml(g)}
       ${overlayHtml(g, spectator ? -1 : mySeat, dealing)}
     </div>`;
