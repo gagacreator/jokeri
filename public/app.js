@@ -421,7 +421,8 @@ function trickHtml(g, mySeat) {
     // take: the joker slams onto the pile from above; give: it slides in from below and ends up underneath
     const z = joker ? (take ? 10 + i : 0) : i + 1; // a taking joker stays on top of the pile, a giving one stays under it
     const cls = `slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''} ${joker ? (take ? 'jtake' : 'jgive') : ''}`;
-    return `<div class="${cls}" style="z-index:${z}">${joker ? `<span class="jaura" style="animation-delay:${(take ? 480 : 700) - e}ms"></span>` : ''}${card3d(t.card, { style })}${badge}</div>`;
+    const sparks = joker && take ? `<span class="jsparks">${Array.from({ length: 16 }, (_, k) => `<i style="--a:${k * 22.5}deg;--d:${34 + (k % 3) * 14}px"></i>`).join('')}</span>` : '';
+    return `<div class="${cls}" style="z-index:${z};--e:${-e}ms">${joker ? '<span class="jaura"></span>' : ''}${sparks}${card3d(t.card, { style })}${badge}</div>`;
   }).join('');
 }
 
@@ -543,6 +544,10 @@ function renderGame() {
   if (dealing) rerenderIn(dealTotalMs(g) - dealT + 30);
 
   const two = handRows(g.hand.length) === 2;
+  // joker cinematic: the camera pushes in on the joker, follows it down and pulls back; the clock continues across re-renders
+  const jt = g.trick.find(t => t.card.s === 'J');
+  const jmode = jt ? (jt.mode === 'low' ? 'give' : 'take') : '';
+  const jdelay = jt ? `animation-delay:${-elapsed(`tc:${dealKey(g)}:${g.tricksWon.reduce((a, b) => a + b, 0)}:${jt.seat}`)}ms` : '';
   app.innerHTML = `
     <div class="game ${two ? 'two' : ''}">
       <div class="felt3d"></div>
@@ -550,7 +555,8 @@ function renderGame() {
         <button class="iconbtn" data-act="score">ცხრილი</button>
         <div class="trump">${trumpChip(g)}</div>
       </div>
-      <div class="board">
+      ${jt ? `<div class="jvig ${jmode}" style="${jdelay}"></div>` : ''}
+      <div class="board ${jt ? 'jcam ' + jmode : ''}" style="${jdelay}">
         ${seatBox(g, seatAt(2), 'top')}
         ${seatBox(g, seatAt(1), 'left')}
         <div class="center ${g.phase === 'trickEnd' ? 'ending' : ''} ${g.trick.some(t => t.card.s === 'J') ? 'hasjoker' : ''}">${dealing ? '<div class="deck"><i></i><i></i><i></i><i></i></div>' : ''}${trickHtml(g, mySeat)}</div>
