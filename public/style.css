@@ -523,3 +523,6 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 #chatfeed.ingame.two { bottom: calc(300px + env(safe-area-inset-bottom, 0px)); }
 .overlay.panel { padding-bottom: calc(192px + env(safe-area-inset-bottom)); }
 .game.two .overlay.panel { padding-bottom: calc(248px + env(safe-area-inset-bottom)); }
+
+/* right player lowered (still clear of the chat messages) */
+.seat.right { margin-top: 74px; }
