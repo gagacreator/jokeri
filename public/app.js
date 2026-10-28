@@ -444,7 +444,11 @@ function suitTile(sym, cls = '') {
 
 function trumpChip(g) {
   if (g.trump === null || g.trump === undefined) return `<span class="tl">კოზირი</span>${suitTile('—')}`;
-  if (g.trump === 'N') return `<span class="tl">უკოზირო</span>${suitTile('∅', 'tn')}`;
+  if (g.trump === 'N') { // no trumps: "ბეზი" with a joker card
+    const joker = g.trumpCard || { id: 'J1', s: 'J', r: 15 };
+    const delay = g.trumpCard ? dealTotalMs(g) - elapsed(dealKey(g)) : 0;
+    return `<span class="tl">ბეზი</span>${card3d(joker, g.trumpCard ? { cls: 'flipin', style: `animation-delay:${delay}ms` } : {})}`;
+  }
   if (!g.trumpCard) return `<span class="tl">კოზირი</span>${suitTile(SYM[g.trump], isRed(g.trump) ? 'red' : '')}`;
   const delay = dealTotalMs(g) - elapsed(dealKey(g));
   return `<span class="tl">კოზირი</span>${card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${delay}ms` })}`;
@@ -702,7 +706,7 @@ function overlayHtml(g, mySeat, dealing) {
     return `<div class="overlay panel"><div class="sheet trumpsheet">
       <h3>აირჩიე კოზირი</h3>
       <div class="suitrow">${['D', 'C', 'H', 'S'].map(x => `<button class="suitbtn ${isRed(x) ? 'red' : 'blk'}" data-act="trump" data-s="${x}">${SYM[x]}</button>`).join('')}</div>
-      <button class="suitbtn jbtn" data-act="trump" data-s="N"><span class="jstar">★</span><span class="jl">J</span><span class="jt">უკოზირო</span></button>
+      <button class="suitbtn jbtn" data-act="trump" data-s="N"><span class="jstar">★</span><span class="jl">J</span><span class="jt">ბეზი</span></button>
     </div></div>`;
   }
   return '';
