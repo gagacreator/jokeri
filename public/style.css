@@ -407,3 +407,7 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .center.ending .jbadge, .center.ending .jaura { animation: fadeOut .3s ease-in 1.15s both; }
 
 .modal-open #chat { display: none; }
+
+/* chat button a bit lower */
+.chat.ingame { bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
+.game.two ~ .chat.ingame, .chat.ingame.two { bottom: calc(172px + env(safe-area-inset-bottom, 0px)); }
