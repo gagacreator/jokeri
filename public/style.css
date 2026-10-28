@@ -709,3 +709,7 @@ button, .btn { touch-action: manipulation; }
 .lt-label { font-size: 10px; color: rgba(255,255,255,.7); text-shadow: 0 1px 3px #000; max-width: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lt-row { grid-template-columns: repeat(2, auto); gap: 3px; padding: 4px; background: rgba(0,0,0,.4); border: 0; border-radius: 10px; box-shadow: none; animation: none; }
 .lt-item .c3 { --ch: 44px; }
+
+/* pulka summary: framed by a line above and below */
+.scoresheet table.score tr.pl td { border-top: 1px solid rgba(143,184,255,.55); border-bottom: 1px solid rgba(143,184,255,.55); }
+.scoresheet table.score tr.pl td.l { border-top: 0; border-bottom: 0; }

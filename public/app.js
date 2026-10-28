@@ -730,6 +730,9 @@ function jokerHtml(g) {
   </div></div>`;
 }
 
+// pulka summaries show hundreds: 740 -> 7.4
+const hundreds = v => String(Math.round(v / 10) / 10);
+
 function scoreTable(g) {
   const head = g.names.map((n, i) => `<th colspan="2" class="${i === st.seat ? 'me' : ''}">${esc(n)}</th>`).join('');
   // full layout from the start: 1..8, 9x4, 8..1, 9x4; per player: bid, then points (green made / red failed)
@@ -746,7 +749,7 @@ function scoreTable(g) {
     const ct = (g.cuts && g.cuts[p]) || [0, 0, 0, 0];
     // running total: this pulka plus all the previous ones
     pulkaTotals.forEach((v, i) => { running[i] += v + bn[i] - ct[i]; });
-    rows += `<tr class="pl"><td class="l"></td>${running.map((v, i) => `<td colspan="2" class="pt">${v}${bn[i] ? ` <small>+${bn[i]}</small>` : ''}${ct[i] ? ` <small class="cut">−${ct[i]}</small>` : ''}</td>`).join('')}</tr>`;
+    rows += `<tr class="pl"><td class="l"></td>${running.map((v, i) => `<td colspan="2" class="pt">${hundreds(v)}${bn[i] ? ` <small>+${hundreds(bn[i])}</small>` : ''}${ct[i] ? ` <small class="cut">−${hundreds(ct[i])}</small>` : ''}</td>`).join('')}</tr>`;
     pulkaTotals.fill(0);
   };
   plan.forEach(([pulka, cards], idx) => {
@@ -763,7 +766,7 @@ function scoreTable(g) {
       else { rows += `<tr class="pl"><td class="l"></td><td colspan="8" class="pt"></td></tr>`; pulkaTotals.fill(0); }
     }
   });
-  const tot = g.totals.map(v => `<td colspan="2" class="${v > 0 ? 'ok' : v < 0 ? 'bad' : ''}">${v}</td>`).join('');
+  const tot = g.totals.map(v => `<td colspan="2" class="${v > 0 ? 'ok' : v < 0 ? 'bad' : ''}">${hundreds(v)}</td>`).join('');
   return `<table class="score"><thead><tr><th class="l"></th>${head}</tr></thead><tbody>${rows}</tbody><tfoot><tr class="tot"><td class="l"></td>${tot}</tr></tfoot></table>`;
 }
 
