@@ -100,6 +100,7 @@ function startDeal(g) {
   g.dealSummary = null;
   g.leader = (g.dealer + 1) % 4;
   g.turn = g.leader;
+  g.split = g.cards === 9;
   if (g.cards === 9) {
     g.trumpChooser = g.leader;
     g.phase = 'trump';
@@ -304,6 +305,8 @@ function sortHand(hand) {
 
 // Personalized view: never leaks other players' hands.
 function viewFor(g, seat) {
+  // 9-card deals: only the first 3 cards are shown while the trump is being named
+  const partial = !!g.split && g.phase === 'trump' && g.bids.every(b => b === null);
   return {
     names: g.names,
     phase: g.phase,
@@ -323,8 +326,10 @@ function viewFor(g, seat) {
     lastTrick: g.lastTrick,
     lastWinner: g.lastWinner,
     tricksWon: g.tricksWon,
-    handCounts: g.hands.map(h => h.length),
-    hand: seat >= 0 ? sortHand(g.hands[seat]) : [],
+    split: !!g.split,
+    partial,
+    handCounts: g.hands.map(h => (partial ? 3 : h.length)),
+    hand: seat >= 0 ? sortHand(partial ? g.hands[seat].slice(0, 3) : g.hands[seat]) : [],
     allHands: seat < 0 ? g.hands.map(sortHand) : null, // spectators see every hand
     legal: seat >= 0 ? legalPlays(g, seat) : [],
     forbiddenBid: seat >= 0 && g.turn === seat ? forbiddenBid(g, seat) : null,

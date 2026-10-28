@@ -479,8 +479,18 @@ function tally(g, seat) {
 
 const gameId = g => g.draw.seq.map(x => x.card.id).join('');
 const dealKey = g => `deal:${gameId(g)}:${g.dealIdx}`;
-const dealStep = g => Math.min(80, 1800 / (4 * Math.max(1, g.cards)));
-const dealTotalMs = g => 4 * g.cards * dealStep(g) + 600;
+// 9-card deals come in two stages: 3 cards each while the trump is named, then the other 6
+function dealInfo(g) {
+  const k = dealKey(g);
+  let from = 0, n = g.cards, t;
+  if (g.partial) { n = 3; t = elapsed(k); }
+  else if (g.split && g.phase === 'bidding') { from = 3; t = elapsed(k + ':2'); }
+  else t = elapsed(k);
+  const step = Math.min(80, 1800 / (4 * Math.max(1, n - from)));
+  return { from, n, t, step, total: 4 * (n - from) * step + 600 };
+}
+const dealStep = g => dealInfo(g).step;
+const dealTotalMs = g => dealInfo(g).total;
 
 function seatBox(g, seat, pos) {
   const online = st.players[seat]?.online;
@@ -585,14 +595,15 @@ function handRows(n) {
 }
 
 function handHtml(g, playingTurn, dealT) {
+  const di = dealInfo(g);
   const n = g.hand.length;
   const cardW = 56;
   const avail = Math.min(window.innerWidth, 520) - 56; // margin for the fan rotation
   const rows = handRows(n);
   const perRow = rows === 2 ? [Math.ceil(n / 2), Math.floor(n / 2)] : [n];
-  const step = dealStep(g);
+  const step = di.step;
   const pos = (st.seat - g.dealer - 1 + 4) % 4;
-  const dealing = dealT < dealTotalMs(g);
+  const dealing = dealT < di.total;
   let idx = 0;
   return perRow.map(count => {
     const overlap = count > 1 ? Math.max(rows === 2 ? -4 : 4, (count * cardW - avail) / (count - 1)) : 0;
@@ -601,9 +612,10 @@ function handHtml(g, playingTurn, dealT) {
       const i = idx + j;
       const off = j - (count - 1) / 2;
       const cls = ['hc', !playingTurn || g.legal.includes(c.id) ? 'ok' : 'dim', playingTurn ? 'myturn' : '', c.s === 'J' ? 'jk' : '', selected === c.id ? 'sel' : ''].join(' ');
-      const delay = (i * 4 + pos) * step - dealT; // order in which this card is dealt out
+      const anim = dealing && i >= di.from;
+      const delay = ((i - di.from) * 4 + pos) * step - dealT; // order in which this card is dealt out
       const style = `--rot:${(off * ang).toFixed(1)}deg;--ty:${(off * off * (rows === 2 ? 0.4 : 0.9)).toFixed(1)}px;${j ? `margin-left:${-overlap}px` : ''}`;
-      const inner = card3d(c, { cls: dealing ? 'dealin' : '', style: dealing ? `animation-delay:${delay}ms` : '' });
+      const inner = card3d(c, { cls: anim ? 'dealin' : '', style: anim ? `animation-delay:${delay}ms` : '' });
       return `<div class="${cls}" style="${style}" data-id="${c.id}">${inner}</div>`;
     }).join('');
     idx += count;
@@ -614,8 +626,9 @@ function handHtml(g, playingTurn, dealT) {
 function ghostsHtml(g, mySeat, dealT) {
   const dirs = [[0, 36, 8], [-40, 4, -20], [0, -30, 10], [40, 4, 25]]; // vw/vh offsets per relative seat
   const step = dealStep(g);
+  const di = dealInfo(g);
   let out = '';
-  for (let k = 0; k < 4 * g.cards; k++) {
+  for (let k = 0; k < 4 * (di.n - di.from); k++) {
     const seat = (g.dealer + 1 + (k % 4)) % 4;
     const rel = (seat - mySeat + 4) % 4;
     if (rel === 0) continue; // own cards fly into the hand itself
@@ -634,9 +647,10 @@ function renderGame() {
   const seatAt = rel => (mySeat + rel) % 4;
   const myTurn = !spectator && g.turn === mySeat;
   const playingTurn = myTurn && g.phase === 'playing';
-  const dealT = elapsed(dealKey(g));
-  const dealing = dealT < dealTotalMs(g);
-  if (dealing) rerenderIn(dealTotalMs(g) - dealT + 30);
+  const di = dealInfo(g);
+  const dealT = di.t;
+  const dealing = dealT < di.total;
+  if (dealing) rerenderIn(di.total - dealT + 30);
 
   const two = handRows(g.hand.length) === 2;
   // joker cinematic: the camera pushes in on the joker, follows it down and pulls back; the clock continues across re-renders
