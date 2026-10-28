@@ -626,10 +626,13 @@ function scoreTable(g) {
   for (let i = 0; i < 4; i++) plan.push([3, 9]);
   let rows = '';
   const pulkaTotals = [0, 0, 0, 0];
+  const running = [0, 0, 0, 0];
   const flushPulka = p => {
     const bn = g.bonuses[p] || [0, 0, 0, 0];
     const ct = (g.cuts && g.cuts[p]) || [0, 0, 0, 0];
-    rows += `<tr class="pl"><td class="l"></td>${pulkaTotals.map((v, i) => `<td colspan="2" class="pt">${v + bn[i] - ct[i]}${bn[i] ? ` <small>+${bn[i]}</small>` : ''}${ct[i] ? ` <small class="cut">−${ct[i]}</small>` : ''}</td>`).join('')}</tr>`;
+    // running total: this pulka plus all the previous ones
+    pulkaTotals.forEach((v, i) => { running[i] += v + bn[i] - ct[i]; });
+    rows += `<tr class="pl"><td class="l"></td>${running.map((v, i) => `<td colspan="2" class="pt">${v}${bn[i] ? ` <small>+${bn[i]}</small>` : ''}${ct[i] ? ` <small class="cut">−${ct[i]}</small>` : ''}</td>`).join('')}</tr>`;
     pulkaTotals.fill(0);
   };
   plan.forEach(([pulka, cards], idx) => {

@@ -662,3 +662,9 @@ table.score tr.pl td small.cut { color: #ff8a80; }
 .scoresheet table.score tbody td { height: 22px; line-height: 16px; }
 .scoresheet table.score tbody td:empty::before { content: "\00a0"; }
 .scoresheet table.score tr.pl td { height: 20px; }
+/* lighter, evenly spaced digits */
+.scoresheet table.score { font-variant-numeric: tabular-nums; font-size: 13px; }
+.scoresheet table.score td, .scoresheet table.score td.p, .scoresheet table.score td.b { font-weight: 400; letter-spacing: .2px; }
+.scoresheet table.score td.l, .scoresheet table.score th { font-weight: 500; }
+.scoresheet table.score tr.pl td { font-weight: 500; font-size: 13px; }
+.scoresheet table.score tfoot td { font-weight: 500; font-size: 14px; }
