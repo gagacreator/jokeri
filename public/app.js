@@ -654,7 +654,7 @@ function scoreTable(g) {
 }
 
 function scoreHtml(g) {
-  return `<div class="overlay"><div class="sheet wide"><h3>ცხრილი</h3>${scoreTable(g)}<button class="btn" data-act="score-close">დახურვა</button></div></div>`;
+  return `<div class="overlay mid scoreov"><div class="sheet wide scoresheet"><button class="xbtn" data-act="score-close" aria-label="დახურვა">✕</button><h3>ცხრილი</h3>${scoreTable(g)}</div></div>`;
 }
 
 function dealEndHtml(g) {

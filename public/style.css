@@ -621,3 +621,19 @@ table.score tr.pl td small.cut { color: #ff8a80; }
 .center.ending .jsparks { animation: fadeOut .3s ease-in 1.15s both; }
 /* give: slides in from below with a tilt */
 .slotc.jgive .c3 { animation-duration: 1.4s; }
+
+/* compact, translucent scoreboard with a small ✕ in the top-right corner */
+.overlay.scoreov { background: rgba(0,0,0,.28); }
+.sheet.scoresheet { position: relative; width: min(88vw, 330px); max-width: 330px; max-height: 54dvh; padding: 10px 10px 8px; gap: 4px; border-radius: 16px; background: rgba(12,40,31,.82); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+.scoresheet h3 { font-size: 14px; margin: 0 0 2px; }
+.scoresheet .xbtn { position: absolute; top: 6px; right: 8px; z-index: 5; width: 28px; height: 28px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; font-size: 15px; line-height: 28px; padding: 0; cursor: pointer; }
+.scoresheet table.score { font-size: 11px; border-spacing: 0 2px; }
+.scoresheet table.score th { top: -10px; background: rgba(12,40,31,.95); padding: 2px 1px 5px; font-size: 10px; }
+.scoresheet table.score th span { max-width: 56px; }
+.scoresheet table.score .av.sm { width: 22px; height: 22px; font-size: 11px; }
+.scoresheet table.score td { padding: 3px 1px; }
+.scoresheet table.score td.l { width: 40px; }
+.scoresheet table.score td.cell b { font-size: 12px; }
+.scoresheet table.score td small { font-size: 9px; }
+.scoresheet table.score tfoot td { bottom: -8px; background: rgba(12,40,31,.95); font-size: 14px; padding: 6px 1px 3px; }
+.scoresheet .legend { display: none; }
