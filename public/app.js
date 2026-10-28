@@ -28,7 +28,7 @@ setInterval(() => {
   el.classList.toggle('late', left !== null && left <= 5);
 }, 250);
 
-// a stern buzz, then the table scolds the slow player out loud (Georgian voice where the device has one)
+// a stern buzz, then the recorded voice scolds the slow player for everyone at the table
 let audioCtx = null;
 function buzz() {
   try {
@@ -49,19 +49,21 @@ function buzz() {
     });
   } catch { /* audio is optional */ }
 }
+const scoldAudio = new Audio('/bicho.mp3?v=1');
+scoldAudio.preload = 'auto';
 function scold() {
-  try {
-    if (!window.speechSynthesis) return;
-    const u = new SpeechSynthesisUtterance('ეეე ბიჭო, დროზე მოდი რააა!');
-    u.lang = 'ka-GE';
-    const v = speechSynthesis.getVoices().find(x => /^ka/i.test(x.lang));
-    if (v) u.voice = v;
-    u.rate = 1.05;
-    u.pitch = 0.5; // low, stern
-    u.volume = 1;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  } catch { /* speech is optional */ }
+  scoldAudio.currentTime = 0;
+  // the recorded voice; the browser's speech synthesiser is only a fallback if playback is blocked
+  scoldAudio.play().catch(() => {
+    try {
+      if (!window.speechSynthesis) return;
+      const u = new SpeechSynthesisUtterance('ეეე ბიჭო, დროზე მოდი რააა!');
+      u.lang = 'ka-GE';
+      u.pitch = 0.5;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch { /* speech is optional */ }
+  });
 }
 function nag(n) {
   toast(`⏰ ${n.name}, დროზე!`);
