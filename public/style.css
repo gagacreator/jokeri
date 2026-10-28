@@ -510,3 +510,16 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 #chatfeed.ingame { bottom: calc(198px + env(safe-area-inset-bottom, 0px)); }
 #chatfeed.ingame.two { bottom: calc(262px + env(safe-area-inset-bottom, 0px)); }
 .overlay.panel .sheet { width: min(52vw, 290px); }
+
+/* smaller bidding panel, chat a bit higher again */
+.overlay.panel .sheet.bidsheet { width: min(46vw, 250px); padding: 9px 10px; gap: 7px; border-radius: 16px; }
+.overlay.panel .sheet.bidsheet h3 { font-size: 14px; }
+.overlay.panel .sheet.bidsheet .numgrid { gap: 5px; }
+.overlay.panel .sheet.bidsheet .numgrid .btn { padding: 8px 0; font-size: 16px; border-radius: 9px; }
+.bidnote { text-align: center; font-size: 11px; color: var(--muted); }
+.overlay.panel { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+.game.two .overlay.panel { padding-bottom: calc(206px + env(safe-area-inset-bottom)); }
+#chatfeed.ingame { bottom: calc(238px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed.ingame.two { bottom: calc(300px + env(safe-area-inset-bottom, 0px)); }
+.overlay.panel { padding-bottom: calc(192px + env(safe-area-inset-bottom)); }
+.game.two .overlay.panel { padding-bottom: calc(248px + env(safe-area-inset-bottom)); }

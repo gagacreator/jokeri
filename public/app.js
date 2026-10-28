@@ -536,12 +536,10 @@ function overlayHtml(g, mySeat, dealing) {
   if (jokerPick && myTurn && g.phase === 'playing') return jokerHtml(g);
   if (myTurn && g.phase === 'bidding' && !dealing) {
     const nums = [...Array(g.cards + 1).keys()];
-    const known = g.bids.map((b, i) => b === null ? '' : `${esc(g.names[i])}: ${b}`).filter(Boolean).join(' · ');
-    return `<div class="overlay panel"><div class="sheet">
+    return `<div class="overlay panel"><div class="sheet bidsheet">
       <h3>რამდენს აიღებ?</h3>
-      ${known ? `<div class="muted" style="text-align:center">${known}</div>` : ''}
       <div class="numgrid">${nums.map(n => `<button class="btn" data-act="bid" data-n="${n}" ${g.forbiddenBid === n ? 'disabled' : ''}>${n}</button>`).join('')}</div>
-      ${g.forbiddenBid !== null ? `<div class="muted" style="text-align:center">შენ (დილერს) ${g.forbiddenBid} არ შეგიძლია</div>` : ''}
+      ${g.forbiddenBid !== null ? `<div class="bidnote">დილერს ${g.forbiddenBid} არ შეუძლია</div>` : ''}
     </div></div>`;
   }
   if (myTurn && g.phase === 'trump' && !dealing) {
