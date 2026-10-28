@@ -449,6 +449,14 @@ function trumpChip(g) {
   return `<span class="tl">კოზირი</span>${card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${delay}ms` })}`;
 }
 
+// bids vs cards once everyone has bid: more bids than cards = წაგლეჯვა (grab), fewer = შეტევა (attack)
+function balanceHtml(g) {
+  if (!g.bids || g.bids.some(b => b === null || b === undefined)) return '';
+  const d = g.bids.reduce((s, b) => s + b, 0) - g.cards;
+  if (!d) return '';
+  return `<div class="bal ${d > 0 ? 'grab' : 'atk'}">${d > 0 ? 'წაგლეჯვა' : 'შეტევა'} <b>${Math.abs(d)}</b></div>`;
+}
+
 const AVATAR_COLORS = ['#e8b04a', '#62b0e0', '#d58bc8', '#82cc86'];
 function avatar(seat, name, inner = '', cls = '') {
   const initial = [...String(name)][0] || '?';
@@ -640,7 +648,7 @@ function renderGame() {
       <div class="felt3d"></div>
       <div class="topbar">
         <button class="iconbtn" data-act="score">ცხრილი</button>
-        <div class="trump">${trumpChip(g)}</div>
+        <div class="tw"><div class="trump">${trumpChip(g)}</div>${balanceHtml(g)}</div>
       </div>
       ${jt ? `<div class="jvig ${jmode}" style="${jdelay}"></div>` : ''}
       <div class="board ${jt ? 'jcam ' + jmode : ''}" style="${jdelay}">

@@ -696,3 +696,9 @@ html, body { overflow-x: hidden; max-width: 100vw; touch-action: pan-y; -webkit-
 body { position: relative; -webkit-touch-callout: none; }
 input, textarea, select { font-size: 16px; touch-action: manipulation; }
 button, .btn { touch-action: manipulation; }
+
+.tw { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.bal { background: rgba(0,0,0,.42); border-radius: 10px; padding: 3px 9px; font-size: 12px; font-weight: 600; letter-spacing: .2px; }
+.bal b { font-size: 14px; margin-left: 2px; }
+.bal.grab { color: #ff9b8a; }
+.bal.atk { color: #8fd6ff; }
