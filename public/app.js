@@ -376,7 +376,8 @@ function tally(g, seat) {
   const n = Math.max(bid, taken);
   let pips = '';
   for (let i = 0; i < n; i++) pips += `<i class="${i < taken ? (i < bid ? 'on' : 'over') : ''}"></i>`;
-  return `<div class="tally"><span class="bn ${taken > bid ? 'over' : taken === bid ? 'ok' : ''}">${bid}</span>${pips ? `<span class="pips">${pips}</span>` : ''}</div>`;
+  // no number: the rings are the bid, filled ones are the tricks taken; a pass shows a small "პასი" until it takes something
+  return `<div class="tally">${pips ? `<span class="pips">${pips}</span>` : '<span class="bn wait">პასი</span>'}</div>`;
 }
 
 const gameId = g => g.draw.seq.map(x => x.card.id).join('');
