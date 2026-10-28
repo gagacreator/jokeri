@@ -690,3 +690,9 @@ table.score tr.pl td small.cut { color: #ff8a80; }
 .sbtn:active { background: rgba(242,193,78,.25); }
 .sbtn span { font-size: 24px; line-height: 1; }
 .sbtn b { font-size: 12px; font-weight: 600; }
+
+/* app-like page: no pinch/double-tap zoom, no sideways drag, no rubber-band */
+html, body { overflow-x: hidden; max-width: 100vw; touch-action: pan-y; -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+body { position: relative; -webkit-touch-callout: none; }
+input, textarea, select { font-size: 16px; touch-action: manipulation; }
+button, .btn { touch-action: manipulation; }
