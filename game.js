@@ -56,6 +56,7 @@ function newGame(names) {
     dealer: firstDealer,
     history: [],
     bonuses: {},
+    cuts: {},
     totals: [0, 0, 0, 0],
     hands: [[], [], [], []],
     bids: [null, null, null, null],
@@ -226,8 +227,8 @@ function trickWinner(trick, trump) {
 }
 
 function scoreFor(bid, taken, cards) {
-  if (taken !== bid) return taken * 10;
-  if (bid === 0) return 50;
+  if (bid === 0) return taken === 0 ? 50 : taken * 10; // pass: 50 if nothing taken, else 10 per trick
+  if (taken !== bid) return -200;
   if (bid === cards) return 100 * bid;
   return 50 + 50 * bid;
 }
@@ -270,18 +271,21 @@ function endDeal(g) {
     bonus: null,
   };
   g.history.push(summary);
-  // Pulka bonus: a player who made every bid of the pulka gets their best single-deal score again.
+  // Pulka premium: a player who made every bid of the pulka gets the last deal's score again.
+  // If exactly one player got the premium, every other player loses their best single-deal score of the pulka.
   const nextSpec = DEALS[g.dealIdx + 1];
   if (!nextSpec || nextSpec.pulka !== g.pulka) {
     const rows = g.history.filter(h => h.pulka === g.pulka);
-    const bonus = [0, 1, 2, 3].map(s => (
-      rows.every(h => h.bids[s] === h.taken[s]) ? Math.max(...rows.map(h => h.points[s])) : 0
-    ));
-    if (bonus.some(Boolean)) {
-      bonus.forEach((b, i) => { g.totals[i] += b; });
-      g.bonuses[g.pulka] = bonus;
-      summary.bonus = bonus;
+    const last = rows[rows.length - 1];
+    const bonus = [0, 1, 2, 3].map(s => (rows.every(h => h.bids[s] === h.taken[s]) ? last.points[s] : 0));
+    const winners = bonus.map((b, i) => (rows.every(h => h.bids[i] === h.taken[i]) ? i : -1)).filter(i => i >= 0);
+    const cut = [0, 0, 0, 0];
+    if (winners.length === 1) {
+      for (let i = 0; i < 4; i++) if (i !== winners[0]) cut[i] = Math.max(0, ...rows.map(h => h.points[i]));
     }
+    bonus.forEach((b, i) => { g.totals[i] += b - cut[i]; });
+    if (bonus.some(Boolean)) { g.bonuses[g.pulka] = bonus; summary.bonus = bonus; }
+    if (cut.some(Boolean)) { g.cuts[g.pulka] = cut; summary.cut = cut; }
   }
   g.dealSummary = summary;
   g.phase = 'dealEnd';
@@ -321,6 +325,7 @@ function viewFor(g, seat) {
     totals: g.totals,
     history: g.history,
     bonuses: g.bonuses,
+    cuts: g.cuts,
     dealSummary: g.phase === 'dealEnd' ? g.dealSummary : null,
   };
 }

@@ -183,16 +183,24 @@ function viewFor(t, uid) {
     status: t.status,
     seat,
     isAdmin: !!user?.isAdmin,
+    spectator: seat < 0,
+    watchers: watcherIds(t).length,
     players: t.seats.map(s => (s ? { uid: s.userId, name: s.name, online: isOnline(s.userId) } : null)),
     game: t.game ? G.viewFor(t.game, seat) : null,
   };
 }
 
+// spectators: connected sockets in the table room whose user holds no seat
+const roomSockets = t => [...(io.sockets.adapter.rooms.get('t:' + t.code) || [])].map(id => io.sockets.sockets.get(id)).filter(Boolean);
+const watcherIds = t => [...new Set(roomSockets(t).map(s => s.user.id).filter(id => seatOf(t, id) < 0))];
+
 function broadcast(t) {
+  const socks = new Set(roomSockets(t));
   for (const s of t.seats) {
     if (!s) continue;
-    for (const sock of conns.get(s.userId) || []) sock.emit('table:state', viewFor(t, s.userId));
+    for (const sock of conns.get(s.userId) || []) socks.add(sock);
   }
+  for (const sock of socks) sock.emit('table:state', viewFor(t, sock.user.id));
 }
 
 function schedule(t) {
@@ -245,6 +253,8 @@ io.on('connection', socket => {
   conns.get(uid).add(socket);
   userTables(uid).forEach(broadcast);
 
+  const inTable = t => seatOf(t, uid) >= 0 || socket.rooms.has('t:' + t.code);
+
   const withTable = (cb, fn) => {
     const t = tables.get(socket.tableCode);
     if (!t) return cb?.({ error: 'მაგიდა ვერ მოიძებნა' });
@@ -258,11 +268,24 @@ io.on('connection', socket => {
     }
   };
 
-  socket.on('table:join', (code, cb) => {
+  // what the link visitor may do: sit down (lobby with a free seat) or only watch
+  socket.on('table:info', (code, cb) => {
+    const t = tables.get(String(code || '').toLowerCase());
+    if (!t) return cb?.({ error: 'მაგიდა ვერ მოიძებნა' });
+    const seated = seatOf(t, uid) >= 0;
+    cb?.({
+      name: t.name, status: t.status, seated,
+      canPlay: seated || (t.status === 'lobby' && t.seats.some(s => !s)),
+      players: t.seats.filter(Boolean).map(s => s.name),
+    });
+  });
+
+  socket.on('table:join', (code, mode, cb) => {
+    if (typeof mode === 'function') { cb = mode; mode = 'play'; }
     const t = tables.get(String(code || '').toLowerCase());
     if (!t) return cb?.({ error: 'მაგიდა ვერ მოიძებნა' });
     let seat = seatOf(t, uid);
-    if (seat < 0) {
+    if (seat < 0 && mode !== 'watch') {
       if (t.status !== 'lobby') return cb?.({ error: 'თამაში უკვე დაიწყო' });
       seat = t.seats.findIndex(s => !s);
       if (seat < 0) return cb?.({ error: 'მაგიდა სავსეა' });
@@ -283,19 +306,18 @@ io.on('connection', socket => {
   // ---- text chat: messages live with the table (last 100) ----
   socket.on('chat:history', cb => {
     const t = tables.get(socket.tableCode);
-    if (!t || seatOf(t, uid) < 0) return cb?.({ messages: [] });
+    if (!t || !inTable(t)) return cb?.({ messages: [] });
     cb?.({ messages: t.chat || [] });
   });
   let lastChat = 0;
   socket.on('chat:send', (text, cb) => {
     const t = tables.get(socket.tableCode);
-    const seat = t ? seatOf(t, uid) : -1;
     const body = typeof text === 'string' ? text.trim().slice(0, 300) : '';
-    if (seat < 0 || !body) return cb?.({ error: 'შეტყობინება ცარიელია' });
+    if (!t || !inTable(t) || !body) return cb?.({ error: 'შეტყობინება ცარიელია' });
     const now = Date.now();
     if (now - lastChat < 400) return cb?.({ error: 'ძალიან სწრაფად წერ' });
     lastChat = now;
-    const msg = { id: crypto.randomBytes(4).toString('hex'), uid, name: t.seats[seat].name, text: body, ts: now };
+    const msg = { id: crypto.randomBytes(4).toString('hex'), uid, name: socket.user.name, text: body, ts: now };
     t.chat = [...(t.chat || []), msg].slice(-100);
     saveTables();
     io.to(roomOf(t)).emit('chat:msg', msg);
@@ -305,7 +327,7 @@ io.on('connection', socket => {
   // ---- voice chat: the server only relays WebRTC signaling between seated players ----
   socket.on('voice:join', cb => {
     const t = tables.get(socket.tableCode);
-    if (!t || seatOf(t, uid) < 0) return cb?.({ error: 'მაგიდასთან არ ზიხარ' });
+    if (!t || !inTable(t)) return cb?.({ error: 'მაგიდასთან არ ხარ' });
     const peers = [...new Set(voiceSockets(t).map(s => s.user.id))].filter(id => id !== uid);
     socket.voice = true;
     socket.to(roomOf(t)).emit('voice:joined', { uid });

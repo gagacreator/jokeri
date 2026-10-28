@@ -549,3 +549,8 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 #chatfeed:not(.open) .cmsg:nth-last-child(6) { opacity: .22; }
 #chatfeed.ingame { bottom: calc(204px + env(safe-area-inset-bottom, 0px)); }
 #chatfeed.ingame.two { bottom: calc(268px + env(safe-area-inset-bottom, 0px)); }
+table.score td.cell.miss b { color: #ff8a80; }
+table.score td.cell.empty { background: rgba(255,255,255,.03); }
+table.score tr.pl td small.cut { color: #ff8a80; }
+.hand.spec { align-items:center; pointer-events:none; opacity:.85; }
+.hand.spec .minihand { display:flex; justify-content:center; transform:scale(1.25); transform-origin:bottom center; }

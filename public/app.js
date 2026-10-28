@@ -10,6 +10,7 @@ let token = localStorage.getItem('joker_token');
 let me = null;
 let socket = null;
 let tableCode = null;
+let joinMode = null; // 'play' | 'watch' once the visitor chose
 let st = null; // latest table state
 let selected = null; // card id raised in hand
 let jokerPick = null; // joker card id awaiting mode choice
@@ -91,6 +92,7 @@ function leaveTableView() {
   Voice.leaveTable();
   Chat.leave();
   tableCode = null;
+  joinMode = null;
   st = null;
   selected = null;
   jokerPick = null;
@@ -205,7 +207,7 @@ function ensureSocket() {
   Voice.attach(socket);
   Chat.attach(socket);
   socket.on('connect', () => {
-    if (tableCode) socket.emit('table:join', tableCode, handleJoinResult);
+    if (tableCode) joinMode ? socket.emit('table:join', tableCode, joinMode, handleJoinResult) : startEntry();
   });
   socket.on('table:state', s => {
     if (s.code !== tableCode) return;
@@ -239,10 +241,36 @@ function handleJoinResult(r) {
 function enterTable(code) {
   if (tableCode === code && st) return renderTable();
   tableCode = code;
+  joinMode = null;
   st = null;
   app.innerHTML = '<div class="screen"><div class="muted" style="text-align:center;margin-top:40vh">იტვირთება…</div></div>';
   ensureSocket();
-  if (socket.connected) socket.emit('table:join', code, handleJoinResult);
+  if (socket.connected) startEntry();
+}
+
+// seated players rejoin at once; others pick "play" or "watch" (a started or full table can only be watched)
+function startEntry() {
+  const code = tableCode;
+  socket.emit('table:info', code, info => {
+    if (code !== tableCode) return;
+    if (info?.error) return handleJoinResult(info);
+    if (info.seated) return joinAs('play');
+    if (!info.canPlay) return joinAs('watch');
+    app.innerHTML = `
+      <div class="screen">
+        <div class="logo">♠ ჯოკერი ♥<small>${esc(info.name)}</small></div>
+        <div class="card-box">
+          <div class="muted">${info.players.length ? 'მაგიდასთან ზის: ' + info.players.map(esc).join(', ') : 'მაგიდა ცარიელია'}</div>
+          <button class="btn" data-act="choose-play">თამაში მინდა</button>
+          <button class="btn sec" data-act="choose-watch">👁 ყურება მინდა</button>
+        </div>
+      </div>`;
+  });
+}
+
+function joinAs(mode) {
+  joinMode = mode;
+  socket.emit('table:join', tableCode, mode, handleJoinResult);
 }
 
 function emit(ev, payload) {
@@ -264,11 +292,13 @@ function renderLobby() {
         <button class="btn sm sec" data-act="leave">გასვლა</button>
       </div>
       <div class="logo">♠ ჯოკერი ♥<small>${missing ? `ელოდება კიდევ ${missing} მოთამაშეს` : 'იწყება…'}</small></div>
+      ${st.spectator ? '<div class="muted" style="text-align:center">👁 უყურებ როგორც მაყურებელი</div>' : ''}
       <div class="slots">
         ${st.players.map(p => p ? `<div class="slot" data-uid="${p.uid}"><span class="dot ${p.online ? '' : 'off'}"></span>${esc(p.name)}</div>` : '<div class="slot empty">თავისუფალია</div>').join('')}
       </div>
       <div class="card-box">
-        <div class="muted">გაუგზავნე ლინკი მეგობრებს. როცა 4 მოთამაშე შეიკრიბება, თამაში ავტომატურად დაიწყება.</div>
+        <div class="muted">გაუგზავნე ლინკი მეგობრებს. როცა 4 მოთამაშე შეიკრიბება, თამაში ავტომატურად დაიწყება.${st.watchers ? ` 👁 მაყურებელი: ${st.watchers}` : ''}</div>
+        ${st.spectator && missing ? '<button class="btn" data-act="sit">მინდა ვითამაშო</button>' : ''}
         <div class="row">
           <button class="btn grow" data-act="share" data-code="${st.code}" data-name="${esc(st.name)}">ლინკის გაგზავნა</button>
           <button class="btn sec" data-act="copy" data-code="${st.code}">კოპირება</button>
@@ -488,15 +518,12 @@ function ghostsHtml(g, mySeat, dealT) {
 
 function renderGame() {
   const g = st.game;
-  const mySeat = st.seat;
-  if (mySeat < 0) {
-    app.innerHTML = '<div class="screen"><div class="card-box"><h2>თამაში უკვე დაიწყო</h2><button class="btn" data-act="home">მთავარი გვერდი</button></div></div>';
-    return;
-  }
+  const spectator = st.seat < 0;
+  const mySeat = spectator ? 0 : st.seat; // spectators see the table from seat 0's side, without any hand
   if (g.phase === 'draw') return renderDraw(g, mySeat);
 
   const seatAt = rel => (mySeat + rel) % 4;
-  const myTurn = g.turn === mySeat;
+  const myTurn = !spectator && g.turn === mySeat;
   const playingTurn = myTurn && g.phase === 'playing';
   const dealT = elapsed(dealKey(g));
   const dealing = dealT < dealTotalMs(g);
@@ -517,11 +544,11 @@ function renderGame() {
         ${seatBox(g, seatAt(3), 'right')}
         ${dealing ? ghostsHtml(g, mySeat, dealT) : ''}
       </div>
-      <div class="status ${myTurn ? 'mine' : ''}">${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, mySeat))}</div>
-      <div class="mine-info ${g.turn === mySeat ? 'turn' : ''}">${avatar(mySeat, g.names[mySeat], g.dealer === mySeat ? '<span class="dealer">D</span>' : '', 'sm')}<span class="nm">${esc(g.names[mySeat])}</span>${tally(g, mySeat)}</div>
-      <div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>
+      <div class="status ${myTurn ? 'mine' : ''}">${spectator ? '👁 ' : ''}${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, spectator ? -1 : mySeat))}</div>
+      <div class="mine-info ${myTurn || (spectator && g.turn === 0) ? 'turn' : ''}">${avatar(mySeat, g.names[mySeat], g.dealer === mySeat ? '<span class="dealer">D</span>' : '', 'sm')}<span class="nm">${esc(g.names[mySeat])}</span>${tally(g, mySeat)}</div>
+      ${spectator ? `<div class="hand spec" id="hand"><div class="minihand">${backs(g.handCounts[0])}</div></div>` : `<div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>`}
       ${lastTrickHtml(g)}
-      ${overlayHtml(g, mySeat, dealing)}
+      ${overlayHtml(g, spectator ? -1 : mySeat, dealing)}
     </div>`;
   document.getElementById('chat')?.classList.toggle('two', two);
   document.getElementById('chatfeed')?.classList.toggle('two', two);
@@ -573,37 +600,49 @@ function jokerHtml(g) {
 function scoreTable(g) {
   const lead = Math.max(...g.totals);
   const head = g.names.map((n, i) => `<th class="${i === st.seat ? 'me' : ''}">${avatar(i, n, '', 'sm')}<span>${esc(n)}${lead > 0 && g.totals[i] === lead ? ' 👑' : ''}</span></th>`).join('');
+  // full layout from the start: 1..8, 9x4, 8..1, 9x4
+  const plan = [];
+  for (let c = 1; c <= 8; c++) plan.push([0, c]);
+  for (let i = 0; i < 4; i++) plan.push([1, 9]);
+  for (let c = 8; c >= 1; c--) plan.push([2, c]);
+  for (let i = 0; i < 4; i++) plan.push([3, 9]);
   let rows = '';
-  let lastPulka = -1;
   const pulkaTotals = [0, 0, 0, 0];
   const flushPulka = p => {
     const bn = g.bonuses[p] || [0, 0, 0, 0];
-    rows += `<tr class="pl"><td class="l">პულკა ${p + 1}</td>${pulkaTotals.map((v, i) => `<td>${v + bn[i]}${bn[i] ? `<small>+${bn[i]} ბონუსი</small>` : ''}</td>`).join('')}</tr>`;
+    const ct = (g.cuts && g.cuts[p]) || [0, 0, 0, 0];
+    rows += `<tr class="pl"><td class="l">პულკა ${p + 1}</td>${pulkaTotals.map((v, i) => `<td>${v + bn[i] - ct[i]}${bn[i] ? `<small>+${bn[i]} პრემია</small>` : ''}${ct[i] ? `<small class="cut">−${ct[i]} წაშლა</small>` : ''}</td>`).join('')}</tr>`;
     pulkaTotals.fill(0);
   };
-  g.history.forEach(h => {
-    if (lastPulka !== -1 && h.pulka !== lastPulka) flushPulka(lastPulka);
-    lastPulka = h.pulka;
-    h.points.forEach((p, i) => { pulkaTotals[i] += p; });
-    const trump = h.trump === 'N' ? '<span class="tn">∅</span>' : `<span class="${isRed(h.trump) ? 'red' : ''}">${SYM[h.trump]}</span>`;
-    rows += `<tr><td class="l"><b>${h.cards}</b>${trump}</td>${h.points.map((p, i) => `
-      <td class="cell ${h.bids[i] === h.taken[i] ? 'hit' : 'miss'}"><b>${p}</b><small>${h.bids[i]} · ${h.taken[i]}</small></td>`).join('')}</tr>`;
+  plan.forEach(([pulka, cards], idx) => {
+    const h = g.history[idx];
+    if (h) {
+      h.points.forEach((p, i) => { pulkaTotals[i] += p; });
+      const trump = h.trump === 'N' ? '<span class="tn">∅</span>' : `<span class="${isRed(h.trump) ? 'red' : ''}">${SYM[h.trump]}</span>`;
+      rows += `<tr><td class="l"><b>${h.cards}</b>${trump}</td>${h.points.map((p, i) => `
+        <td class="cell ${h.bids[i] === h.taken[i] ? 'hit' : 'miss'}"><b>${p}</b><small>${h.bids[i]} · ${h.taken[i]}</small></td>`).join('')}</tr>`;
+    } else {
+      rows += `<tr><td class="l"><b>${cards}</b></td>${'<td class="cell empty"><b>&nbsp;</b></td>'.repeat(4)}</tr>`;
+    }
+    if (idx + 1 === plan.length || plan[idx + 1][0] !== pulka) {
+      if (g.history.length > idx) flushPulka(pulka);
+      else { rows += `<tr class="pl"><td class="l">პულკა ${pulka + 1}</td>${'<td>&nbsp;</td>'.repeat(4)}</tr>`; pulkaTotals.fill(0); }
+    }
   });
-  if (g.history.length === g.totalDeals) flushPulka(lastPulka);
   return `<table class="score"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody>
     <tfoot><tr class="tot"><td class="l">ჯამი</td>${g.totals.map((v, i) => `<td class="${lead > 0 && v === lead ? 'lead' : ''}">${v}</td>`).join('')}</tr></tfoot></table>
     <div class="legend"><span><i class="hit"></i>დაკვეთა შესრულდა</span><span>უჯრაში: <b>დაკვეთა · აღებული</b></span></div>`;
 }
 
 function scoreHtml(g) {
-  return `<div class="overlay"><div class="sheet wide"><h3>ცხრილი</h3>${g.history.length ? scoreTable(g) : '<div class="muted" style="text-align:center">ცხრილი ჯერ ცარიელია</div>'}<button class="btn" data-act="score-close">დახურვა</button></div></div>`;
+  return `<div class="overlay"><div class="sheet wide"><h3>ცხრილი</h3>${scoreTable(g)}<button class="btn" data-act="score-close">დახურვა</button></div></div>`;
 }
 
 function dealEndHtml(g) {
   const d = g.dealSummary;
   return `<div class="overlay mid"><div class="sheet">
     <h3>დარიგება დასრულდა</h3>
-    ${d.points.map((p, i) => `<div class="rank"><span class="nm">${esc(g.names[i])}</span><span class="muted">${d.bids[i]}/${d.taken[i]}</span><b class="${p < 0 ? 'neg' : 'pos'}">${p > 0 ? '+' : ''}${p}</b></div>${d.bonus && d.bonus[i] ? `<div class="muted" style="text-align:right">🎉 პულკის ბონუსი: +${d.bonus[i]}</div>` : ''}`).join('')}
+    ${d.points.map((p, i) => `<div class="rank"><span class="nm">${esc(g.names[i])}</span><span class="muted">${d.bids[i]}/${d.taken[i]}</span><b class="${p < 0 ? 'neg' : 'pos'}">${p > 0 ? '+' : ''}${p}</b></div>${d.bonus && d.bonus[i] ? `<div class="muted" style="text-align:right">🎉 პულკის პრემია: +${d.bonus[i]}</div>` : ''}${d.cut && d.cut[i] ? `<div class="muted" style="text-align:right">პულკაში წაიშალა: −${d.cut[i]}</div>` : ''}`).join('')}
     <div class="muted" style="text-align:center">შემდეგი დარიგება მალე იწყება…</div>
     <button class="btn sec" data-act="score">ცხრილი</button>
   </div></div>`;
@@ -673,6 +712,9 @@ document.addEventListener('click', async e => {
       leaveTableView();
       history.pushState({}, '', '/');
       return route();
+    case 'choose-play': return joinAs('play');
+    case 'choose-watch': return joinAs('watch');
+    case 'sit': return socket.emit('table:join', tableCode, 'play', r => { if (r?.error) toast(r.error); else joinMode = 'play'; });
     case 'leave':
       socket.emit('table:leave', () => { leaveTableView(); history.pushState({}, '', '/'); route(); });
       return;
