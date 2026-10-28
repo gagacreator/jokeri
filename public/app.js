@@ -88,6 +88,7 @@ function route() {
 
 function leaveTableView() {
   Voice.leaveTable();
+  Chat.leave();
   tableCode = null;
   st = null;
   selected = null;
@@ -200,6 +201,7 @@ function ensureSocket() {
   if (socket) return;
   socket = io({ auth: { token } });
   Voice.attach(socket);
+  Chat.attach(socket);
   socket.on('connect', () => {
     if (tableCode) socket.emit('table:join', tableCode, handleJoinResult);
   });
@@ -207,6 +209,7 @@ function ensureSocket() {
     if (s.code !== tableCode) return;
     st = s;
     Voice.setState(s);
+    Chat.setState(s);
     const g = s.game;
     if (selected && !(g && g.legal.includes(selected))) selected = null;
     renderTable();
@@ -410,7 +413,7 @@ function renderDraw(g, mySeat) {
   app.innerHTML = `
     <div class="game">
       <div class="felt3d"></div>
-      <div class="topbar"><div class="info"><b>ჯოკერი</b><br>დილერის არჩევა</div></div>
+      <div class="topbar"></div>
       <div class="board drawing">
         ${box(2)}${box(1)}
         <div class="center"><div class="deck"><i></i><i></i><i></i><i></i></div></div>
@@ -491,7 +494,6 @@ function renderGame() {
       <div class="felt3d">${g.trump && g.trump !== 'N' ? `<span class="tmark ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span>` : ''}</div>
       <div class="topbar">
         <button class="iconbtn" data-act="score">ცხრილი</button>
-        <div class="info">პულკა <b>${g.pulka + 1}</b>/4<br>${g.dealIdx + 1}/${g.totalDeals} · ${g.cards} კარტი</div>
         <div class="trump">${trumpChip(g)}</div>
       </div>
       <div class="board">
@@ -507,6 +509,7 @@ function renderGame() {
       ${lastTrickHtml(g)}
       ${overlayHtml(g, mySeat, dealing)}
     </div>`;
+  document.getElementById('chat')?.classList.toggle('two', two);
 }
 
 function overlayHtml(g, mySeat, dealing) {

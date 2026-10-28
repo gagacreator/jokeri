@@ -279,6 +279,28 @@ io.on('connection', socket => {
     cb?.({ ok: true });
   });
 
+  // ---- text chat: messages live with the table (last 100) ----
+  socket.on('chat:history', cb => {
+    const t = tables.get(socket.tableCode);
+    if (!t || seatOf(t, uid) < 0) return cb?.({ messages: [] });
+    cb?.({ messages: t.chat || [] });
+  });
+  let lastChat = 0;
+  socket.on('chat:send', (text, cb) => {
+    const t = tables.get(socket.tableCode);
+    const seat = t ? seatOf(t, uid) : -1;
+    const body = typeof text === 'string' ? text.trim().slice(0, 300) : '';
+    if (seat < 0 || !body) return cb?.({ error: 'შეტყობინება ცარიელია' });
+    const now = Date.now();
+    if (now - lastChat < 400) return cb?.({ error: 'ძალიან სწრაფად წერ' });
+    lastChat = now;
+    const msg = { id: crypto.randomBytes(4).toString('hex'), uid, name: t.seats[seat].name, text: body, ts: now };
+    t.chat = [...(t.chat || []), msg].slice(-100);
+    saveTables();
+    io.to(roomOf(t)).emit('chat:msg', msg);
+    cb?.({ ok: true });
+  });
+
   // ---- voice chat: the server only relays WebRTC signaling between seated players ----
   socket.on('voice:join', cb => {
     const t = tables.get(socket.tableCode);

@@ -325,3 +325,38 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .voice.ingame .vmic.muted { background: #8e2b2b; }
 .voice.ingame .vleave { background: rgba(255,255,255,.14); }
 .voice.ingame .vcount { background: rgba(255,255,255,.14); border-radius: 10px; padding: 8px 8px; }
+
+/* clean top: no texts, table lifted */
+.topbar { position: absolute; left: 0; right: 0; top: env(safe-area-inset-top, 0px); z-index: 4; padding: 8px 10px; justify-content: space-between; pointer-events: none; }
+.topbar > * { pointer-events: auto; }
+.board { padding-top: calc(env(safe-area-inset-top, 0px) + 6px); }
+.felt3d { top: 4%; bottom: 20%; }
+.ltc, .game.two .ltc { top: calc(env(safe-area-inset-top, 0px) + 66px); }
+.voice.ingame { top: calc(env(safe-area-inset-top, 0px) + 66px); }
+
+/* ---------- text chat ---------- */
+.chat { position: fixed; z-index: 30; }
+.chat[hidden] { display: none; }
+.chat.ingame { right: max(10px, calc(50% - 250px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+.chat.ingame.two { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
+.chat.lobby { right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+.chat.open, .chat.ingame.open, .chat.lobby.open, .chat.ingame.two.open { inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; }
+.chatbtn { position: relative; width: 48px; height: 48px; border-radius: 50%; border: 0; background: rgba(255,255,255,.18); color: #fff; font-size: 22px; backdrop-filter: blur(4px); box-shadow: 0 4px 14px rgba(0,0,0,.45); }
+.cbadge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #e53935; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.cbadge[hidden] { display: none; }
+.chatpanel { width: 100%; max-width: 520px; height: 72dvh; background: #12382c; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; overflow: hidden; }
+.chead { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.08); color: var(--gold); font-size: 17px; }
+.cclose { border: 0; background: rgba(255,255,255,.12); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; }
+.clist { flex: 1; overflow-y: auto; padding: 12px 12px 6px; display: flex; flex-direction: column; gap: 8px; }
+.cempty { margin: auto; color: var(--muted); font-size: 14px; text-align: center; }
+.cmsg { max-width: 80%; display: flex; flex-direction: column; gap: 2px; }
+.cmsg.mine { align-self: flex-end; align-items: flex-end; }
+.cmsg.other { align-self: flex-start; }
+.cname { font-size: 11px; color: var(--muted); padding: 0 6px; }
+.ctext { padding: 8px 12px; border-radius: 16px; font-size: 15px; line-height: 1.35; word-break: break-word; white-space: pre-wrap; }
+.cmsg.mine .ctext { background: var(--gold); color: var(--ink); border-bottom-right-radius: 4px; }
+.cmsg.other .ctext { background: rgba(255,255,255,.12); border-bottom-left-radius: 4px; }
+.ctime { margin-left: 8px; font-size: 10px; opacity: .55; white-space: nowrap; }
+.cform { display: flex; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(255,255,255,.08); }
+.cinput { flex: 1; padding: 12px 14px; border-radius: 22px; }
+.csend { width: 46px; border: 0; border-radius: 50%; background: var(--gold); color: var(--ink); font-size: 18px; font-weight: 700; flex: none; }
