@@ -366,3 +366,7 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .cinput::placeholder { color: rgba(255,255,255,.55); }
 .cinput:focus { border-color: var(--gold); }
 .csend { width: 42px; height: 42px; flex: none; border: 0; border-radius: 50%; background: rgba(242,193,78,.9); color: var(--ink); font-size: 17px; font-weight: 700; }
+
+/* top player closer to the table */
+.felt3d { top: -3%; }
+.seat.top { margin-top: 8px; }
