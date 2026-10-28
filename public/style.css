@@ -366,3 +366,44 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .trump .tile .cc { position: static; font-size: 30px; }
 .trump .tile.tn .cc { color: var(--gold); font-size: 26px; }
 .ltc, .game.two .ltc, .voice.ingame { top: calc(env(safe-area-inset-top, 0px) + 82px); }
+
+/* ---------- joker: choice sheet ---------- */
+.overlay.jover { background: rgba(0,0,0,.35); }
+.sheet.jsheet { background: linear-gradient(180deg, rgba(40,18,70,.97), rgba(14,22,48,.98)); border-top: 1px solid rgba(255,215,120,.35); gap: 14px; align-items: stretch; }
+.jhead { display: flex; align-items: center; justify-content: center; gap: 12px; perspective: 500px; }
+.jhead h3 { color: #ffe08a; font-size: 22px; letter-spacing: .5px; text-shadow: 0 0 14px rgba(255,200,80,.5); }
+.jhead .c3 { --ch: 62px; animation: jspin 3.2s ease-in-out infinite; }
+@keyframes jspin { 0%, 100% { transform: rotateY(-22deg) rotateZ(-4deg); } 50% { transform: rotateY(22deg) rotateZ(4deg); } }
+.jopts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.jopt { border: 2px solid transparent; border-radius: 18px; padding: 16px 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #fff; cursor: pointer; transition: transform .15s, box-shadow .2s, border-color .2s; }
+.jopt:active { transform: scale(.97); }
+.jopt .jico { font-size: 40px; line-height: 1.1; filter: drop-shadow(0 3px 6px rgba(0,0,0,.5)); }
+.jopt b { font-size: 19px; }
+.jopt small { font-size: 12px; opacity: .8; }
+.jopt.take { background: linear-gradient(155deg, #f7c948 0%, #e08a1e 100%); color: #2b1a00; box-shadow: 0 6px 18px rgba(240,170,40,.35); }
+.jopt.give { background: linear-gradient(155deg, #5b8def 0%, #35418f 100%); box-shadow: 0 6px 18px rgba(70,100,220,.35); }
+.jopt.on { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25), 0 8px 24px rgba(255,255,255,.18); transform: translateY(-2px); }
+.jsuits { display: flex; flex-direction: column; gap: 8px; animation: ltIn .25s ease-out; }
+.jhint { text-align: center; font-size: 13px; color: var(--muted); }
+.jsuitrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.jsuit { border: 0; border-radius: 14px; background: #fff; color: #111; font-size: 34px; line-height: 1; padding: 12px 0; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+.jsuit.red { color: #c62828; }
+.jsuit:active { transform: scale(.94); }
+.jcancel { border: 0; background: none; color: var(--muted); font-size: 14px; padding: 6px; }
+
+/* ---------- joker: on the table ---------- */
+.slotc .jaura { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; pointer-events: none; z-index: -1; animation: jaura 1.6s ease-out both; }
+.slotc.jtake .jaura { background: radial-gradient(circle, rgba(255,214,90,.75) 0%, rgba(255,170,30,.35) 40%, rgba(255,170,30,0) 70%); }
+.slotc.jgive .jaura { background: radial-gradient(circle, rgba(130,170,255,.7) 0%, rgba(80,110,230,.35) 40%, rgba(80,110,230,0) 70%); }
+@keyframes jaura { 0% { transform: scale(.3); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(1.5); opacity: .55; } }
+.slotc.jtake .c3 .front { box-shadow: 0 0 0 2px #ffd25a, 0 0 18px rgba(255,200,60,.9); }
+.slotc.jgive .c3 .front { box-shadow: 0 0 0 2px #8fb0ff, 0 0 18px rgba(110,150,255,.9); }
+.jbadge { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 6px; border-radius: 12px; font-size: 12px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,.5); animation: ltIn .3s ease-out .2s both; }
+.jbadge em { font-style: normal; font-size: 14px; }
+.jbadge i { font-style: normal; background: #fff; color: #111; border-radius: 8px; padding: 0 5px; font-size: 14px; line-height: 1.3; }
+.jbadge i.red { color: #c62828; }
+.jbadge.take { background: linear-gradient(135deg, #ffd25a, #f0951e); color: #2b1a00; }
+.jbadge.give { background: linear-gradient(135deg, #7fa4ff, #4558c9); color: #fff; }
+.center.ending .jbadge, .center.ending .jaura { animation: fadeOut .3s ease-in 1.15s both; }
+
+.modal-open #chat { display: none; }

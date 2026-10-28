@@ -13,6 +13,7 @@ let tableCode = null;
 let st = null; // latest table state
 let selected = null; // card id raised in hand
 let jokerPick = null; // joker card id awaiting mode choice
+let jokerMode = null; // 'high' (მიმყავს) / 'low' (არ მიმყავს) chosen while leading, before picking the suit
 let showScore = false;
 let showLast = false;
 let authMode = 'login';
@@ -93,6 +94,7 @@ function leaveTableView() {
   st = null;
   selected = null;
   jokerPick = null;
+  jokerMode = null;
   showScore = false;
   showLast = false;
 }
@@ -363,12 +365,15 @@ function trickHtml(g, mySeat) {
     const e = elapsed(`tc:${dealKey(g)}:${trickNo}:${t.seat}`);
     // playIn runs right away, sweep (only while the trick is ending) starts late in the pause
     const style = `animation-delay:${-e}ms,${1150 - se}ms`;
-    let tag = '';
-    if (t.card.s === 'J') {
-      tag = t.mode === 'low' ? 'დაბალი' : 'მაღალი';
-      if (t.suit) tag += ` ${SYM[t.suit]}`;
+    const joker = t.card.s === 'J';
+    let badge = '';
+    if (joker) {
+      const high = t.mode !== 'low';
+      const suit = t.suit ? `<i class="${isRed(t.suit) ? 'red' : ''}">${SYM[t.suit]}</i>` : '';
+      badge = `<span class="jbadge ${high ? 'take' : 'give'}"><em>${high ? '👑' : '🕊️'}</em>${high ? 'მიმყავს' : 'არ მიმყავს'}${suit}</span>`;
     }
-    return `<div class="slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''}" style="z-index:${i + 1}">${card3d(t.card, { style })}${tag ? `<span class="jtag">${tag}</span>` : ''}</div>`;
+    const cls = `slotc s${rel} w${wRel} ${g.trickWinner === t.seat ? 'win' : ''} ${joker ? (t.mode === 'low' ? 'jgive' : 'jtake') : ''}`;
+    return `<div class="${cls}" style="z-index:${i + 1}">${joker ? '<span class="jaura"></span>' : ''}${card3d(t.card, { style })}${badge}</div>`;
   }).join('');
 }
 
@@ -514,6 +519,7 @@ function renderGame() {
       ${overlayHtml(g, mySeat, dealing)}
     </div>`;
   document.getElementById('chat')?.classList.toggle('two', two);
+  document.body.classList.toggle('modal-open', !!document.querySelector('.overlay:not(.panel)'));
 }
 
 function overlayHtml(g, mySeat, dealing) {
@@ -543,22 +549,20 @@ function overlayHtml(g, mySeat, dealing) {
 }
 
 function jokerHtml(g) {
-  const suits = mode => ['S', 'C', 'D', 'H'].map(s => `<button class="btn ${isRed(s) ? 'red' : 'blk'}" data-act="joker" data-mode="${mode}" data-s="${s}">${SYM[s]}</button>`).join('');
-  if (g.trick.length === 0) {
-    return `<div class="overlay"><div class="sheet">
-      <h3>ჯოკერით ხელის გახსნა</h3>
-      <div class="muted" style="text-align:center">მაღალი — იღებ ხელს, დანარჩენები ნიშანს მოგყვებიან. აირჩიე ნიშანი:</div>
-      <div class="suitgrid">${suits('high')}</div>
-      <div class="muted" style="text-align:center">დაბალი — არ იღებ ხელს (თუ ნიშანს არავინ მოჰყვა, მაინც შენია):</div>
-      <div class="suitgrid">${suits('low')}</div>
-      <button class="btn danger" data-act="joker-cancel">გაუქმება</button>
-    </div></div>`;
-  }
-  return `<div class="overlay"><div class="sheet">
-    <h3>ჯოკერი</h3>
-    <button class="btn" data-act="joker" data-mode="high">ავიღებ (მაღალი)</button>
-    <button class="btn sec" data-act="joker" data-mode="low">არ ავიღებ (დაბალი)</button>
-    <button class="btn danger" data-act="joker-cancel">გაუქმება</button>
+  const leading = g.trick.length === 0;
+  const suits = leading && jokerMode ? `
+    <div class="jsuits">
+      <div class="jhint">${jokerMode === 'high' ? 'აირჩიე ნიშანი, რომელსაც დანარჩენები მოგყვებიან' : 'აირჩიე ნიშანი, რომელიც მოთხოვნილი იქნება'}</div>
+      <div class="jsuitrow">${['S', 'C', 'D', 'H'].map(x => `<button class="jsuit ${isRed(x) ? 'red' : ''}" data-act="joker" data-s="${x}">${SYM[x]}</button>`).join('')}</div>
+    </div>` : '';
+  return `<div class="overlay jover"><div class="sheet jsheet">
+    <div class="jhead">${card3d({ id: 'J1', s: 'J', r: 15 }, { cls: 'jspin' })}<h3>ჯოკერი</h3></div>
+    <div class="jopts">
+      <button class="jopt take ${jokerMode === 'high' ? 'on' : ''}" data-act="jmode" data-mode="high"><span class="jico">👑</span><b>მიმყავს</b><small>ხელს ვიღებ</small></button>
+      <button class="jopt give ${jokerMode === 'low' ? 'on' : ''}" data-act="jmode" data-mode="low"><span class="jico">🕊️</span><b>არ მიმყავს</b><small>ხელს ვუთმობ</small></button>
+    </div>
+    ${suits}
+    <button class="jcancel" data-act="joker-cancel">გაუქმება</button>
   </div></div>`;
 }
 
@@ -615,6 +619,7 @@ function finishedHtml(g) {
 function playCard(id, extra = {}) {
   selected = null;
   jokerPick = null;
+  jokerMode = null;
   emit('game:play', { id, ...extra });
 }
 
@@ -680,11 +685,13 @@ document.addEventListener('click', async e => {
     case 'score-close': showScore = false; return renderGame();
     case 'bid': return emit('game:bid', Number(el.dataset.n));
     case 'trump': return emit('game:trump', el.dataset.s);
-    case 'joker': {
-      const id = jokerPick;
-      return playCard(id, { mode: el.dataset.mode, suit: el.dataset.s });
+    case 'jmode': {
+      const g = st.game;
+      if (g.trick.length === 0) { jokerMode = el.dataset.mode; return renderGame(); } // leading: pick the suit next
+      return playCard(jokerPick, { mode: el.dataset.mode });
     }
-    case 'joker-cancel': jokerPick = null; return renderGame();
+    case 'joker': return playCard(jokerPick, { mode: jokerMode || el.dataset.mode, suit: el.dataset.s });
+    case 'joker-cancel': jokerPick = null; jokerMode = null; return renderGame();
     case 'rematch': return emit('game:rematch');
   }
 });
