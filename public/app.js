@@ -306,13 +306,17 @@ function backs(n) {
   return '<i></i>'.repeat(Math.min(n, 9));
 }
 
+// trump is shown once, as a card: the turned-up card in pulkas 1/3, a suit tile when a player named it (pulkas 2/4)
+function suitTile(sym, cls = '') {
+  return `<div class="c3 tile ${cls}"><div class="cf front"><span class="cc">${sym}</span></div><div class="cf back"></div></div>`;
+}
+
 function trumpChip(g) {
-  if (g.trump === null || g.trump === undefined) return '<div class="col"><span class="tl">კოზირი</span><span class="tsym">—</span></div>';
-  if (g.trump === 'N') return '<div class="col"><span class="tl">კოზირი</span><span class="tsym tn">∅</span></div><span class="tnone">უკოზირო</span>';
-  const sym = `<div class="col"><span class="tl">კოზირი</span><span class="tsym ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span></div>`;
-  if (!g.trumpCard) return sym; // named by a player (9-card deals): no turned card
+  if (g.trump === null || g.trump === undefined) return `<span class="tl">კოზირი</span>${suitTile('—')}`;
+  if (g.trump === 'N') return `<span class="tl">უკოზირო</span>${suitTile('∅', 'tn')}`;
+  if (!g.trumpCard) return `<span class="tl">კოზირი</span>${suitTile(SYM[g.trump], isRed(g.trump) ? 'red' : '')}`;
   const delay = dealTotalMs(g) - elapsed(dealKey(g));
-  return card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${delay}ms` }) + sym;
+  return `<span class="tl">კოზირი</span>${card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${delay}ms` })}`;
 }
 
 const AVATAR_COLORS = ['#e8b04a', '#62b0e0', '#d58bc8', '#82cc86'];
@@ -491,7 +495,7 @@ function renderGame() {
   const two = handRows(g.hand.length) === 2;
   app.innerHTML = `
     <div class="game ${two ? 'two' : ''}">
-      <div class="felt3d">${g.trump && g.trump !== 'N' ? `<span class="tmark ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span>` : ''}</div>
+      <div class="felt3d"></div>
       <div class="topbar">
         <button class="iconbtn" data-act="score">ცხრილი</button>
         <div class="trump">${trumpChip(g)}</div>

@@ -54,8 +54,6 @@ h2 { margin: 0; font-size: 18px; }
 /* ---------- game ---------- */
 .game { position: relative; width: 100%; height: 100dvh; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); overflow: hidden; user-select: none; -webkit-user-select: none; background: radial-gradient(ellipse at 50% 40%, #1d2b27 0%, #0a0f0e 100%); }
 .felt3d { position: absolute; left: 4%; right: 4%; top: 12%; bottom: 18%; border-radius: 50% / 40%; background: radial-gradient(ellipse at 50% 40%, #1f9b6b 0%, #137050 50%, #0a4632 100%); border: 5px solid #3b2a1c; box-shadow: inset 0 0 36px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.12), 0 26px 38px rgba(0,0,0,.6), 0 2px 0 #1d140c; transform: perspective(900px) rotateX(32deg); transform-origin: 50% 70%; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-.felt3d .tmark { font-size: 120px; line-height: 1; color: rgba(255,255,255,.1); transform: translateY(6px); }
-.felt3d .tmark.red { color: rgba(255,90,90,.16); }
 .topbar { position: relative; z-index: 3; display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 13px; }
 .topbar .info { flex: 1; text-align: center; line-height: 1.25; text-shadow: 0 1px 3px #000; }
 .topbar .info b { color: var(--gold); }
@@ -77,30 +75,26 @@ h2 { margin: 0; font-size: 18px; }
 
 /* ---------- 3D cards ---------- */
 :root { --back: repeating-linear-gradient(45deg, #8e1b2c 0 4px, #b3263b 4px 8px); }
-.c3 { position: relative; width: 46px; height: 66px; transform-style: preserve-3d; flex: none; }
+.c3 { --ch: 66px; position: relative; width: calc(var(--ch) * .683); height: var(--ch); transform-style: preserve-3d; flex: none; }
 .c3 .cf { position: absolute; inset: 0; border-radius: 7px; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 3px 8px rgba(0,0,0,.5); }
 .c3 .front { background: linear-gradient(145deg, #ffffff 0%, #f6f1e1 60%, #e9e2cc 100%); color: var(--ink); overflow: hidden; }
 .c3 .front::after { content: ""; position: absolute; inset: 0; background: linear-gradient(120deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 40%); pointer-events: none; }
 .c3.red .front { color: var(--red); }
 .c3 .back { transform: rotateY(180deg); background: var(--back); border: 3px solid #fff; }
 .c3 .back::after { content: "♠"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.55); font-size: 20px; }
-.c3 .cr { position: absolute; left: 4px; top: 2px; font-weight: 800; font-size: 13px; line-height: 1; text-align: center; }
-.c3 .cr.br { left: auto; top: auto; right: 4px; bottom: 2px; transform: rotate(180deg); }
-.c3 .cc { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.c3 .cr { position: absolute; left: 3px; top: 2px; font-weight: 800; font-size: calc(var(--ch) * .18); line-height: .95; text-align: center; }
+.c3 .cr.br { left: auto; top: auto; right: 3px; bottom: 2px; transform: rotate(180deg); }
+.c3 .cc { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: calc(var(--ch) * .33); }
 .c3.joker .front { background: linear-gradient(150deg, #fff6d8, #ffd6ec 55%, #d9c6ff); color: #6a1b9a; }
-.c3.joker .cc { font-size: 30px; }
-.c3.joker .cr { font-size: 8px; writing-mode: vertical-rl; top: 6px; }
-.big .c3 { width: 56px; height: 82px; }
-.big .c3 .cr { font-size: 16px; }
-.big .c3 .cc { font-size: 34px; }
+.c3.joker .cc { font-size: calc(var(--ch) * .4); }
+.c3.joker .cr { font-size: calc(var(--ch) * .12); writing-mode: vertical-rl; top: 6px; }
+.big .c3 { --ch: 82px; }
 
 /* cards in hand: fanned */
 .hand { position: relative; z-index: 3; display: flex; justify-content: center; align-items: flex-end; padding: 22px 8px calc(22px + env(safe-area-inset-bottom)); height: 140px; perspective: 900px; }
 .hc { transform-origin: 50% 160%; transform: translateY(var(--ty, 0)) rotate(var(--rot, 0)); transition: transform .18s; flex: none; }
 .hc.sel { transform: translateY(calc(var(--ty, 0px) - 24px)) rotate(var(--rot, 0deg)); z-index: 5; }
-.hc .c3 { width: 56px; height: 82px; }
-.hc .c3 .cr { font-size: 16px; }
-.hc .c3 .cc { font-size: 34px; }
+.hc .c3 { --ch: 82px; }
 .hc.dim .c3 { filter: brightness(.5); }
 .hc.myturn.ok .c3 .front { box-shadow: 0 0 0 2px rgba(242,193,78,.9); }
 .hc.sel .c3 .cf { box-shadow: 0 0 0 3px var(--gold), 0 8px 16px rgba(0,0,0,.6); }
@@ -111,9 +105,7 @@ h2 { margin: 0; font-size: 18px; }
 .slotc.s1 { --sx: -38vw; --sy: 0px; --ox: -20px; --oy: 2px; --r: 9deg; }
 .slotc.s2 { --sx: 0px; --sy: -30vh; --ox: 3px; --oy: -18px; --r: -10deg; }
 .slotc.s3 { --sx: 38vw; --sy: 0px; --ox: 20px; --oy: -2px; --r: 6deg; }
-.slotc .c3 { width: 56px; height: 82px; }
-.slotc .c3 .cr { font-size: 16px; }
-.slotc .c3 .cc { font-size: 34px; }
+.slotc .c3 { --ch: 82px; }
 .slotc .c3 { transform: rotate(var(--r)); animation: playIn .5s cubic-bezier(.2,.8,.25,1) both; }
 .center.ending .slotc .c3 { animation: playIn .5s cubic-bezier(.2,.8,.25,1) both, sweep .5s ease-in both; }
 .center.ending .slotc.w0 .c3 { --wx: 0px; --wy: 36vh; }
@@ -158,10 +150,8 @@ h2 { margin: 0; font-size: 18px; }
 
 /* ace draw */
 .drawrow { display: flex; justify-content: center; align-items: center; margin-top: 4px; min-height: 40px; perspective: 600px; }
-.drawrow .c3 { width: 34px; height: 49px; margin-left: -12px; }
+.drawrow .c3 { --ch: 49px; margin-left: -12px; }
 .drawrow .c3:first-child { margin-left: 0; }
-.drawrow .c3 .cr { font-size: 11px; }
-.drawrow .c3 .cc { font-size: 20px; }
 .drawfly { animation: drawFly .85s cubic-bezier(.2,.8,.25,1) both; }
 @keyframes drawFly {
   0% { transform: translate(var(--fx), var(--fy)) rotateY(180deg) rotateX(50deg) scale(1.4); opacity: 0; }
@@ -218,7 +208,7 @@ h2 { margin: 0; font-size: 18px; }
 
 /* ---------- minimal redesign ---------- */
 .trump { display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,.42); border-radius: 14px; padding: 4px 9px 4px 6px; min-height: 52px; perspective: 400px; }
-.trump .c3 { width: 30px; height: 43px; }
+.trump .c3 { --ch: 58px; }
 .trump .col { display: flex; flex-direction: column; align-items: center; line-height: 1; gap: 2px; }
 .trump .tl { font-size: 9px; color: var(--muted); letter-spacing: .3px; }
 .trump .tsym { font-size: 30px; color: #fff; line-height: 1; }
@@ -262,9 +252,7 @@ h2 { margin: 0; font-size: 18px; }
 .lt-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .lt-item.win { color: var(--gold); }
 .lt-item.win .c3 .front { box-shadow: 0 0 0 2px var(--gold); }
-.lt-item .c3 { width: 38px; height: 55px; }
-.lt-item .c3 .cr { font-size: 11px; }
-.lt-item .c3 .cc { font-size: 22px; }
+.lt-item .c3 { --ch: 55px; }
 
 /* scoreboard */
 .sheet.wide { max-width: 520px; }
@@ -370,3 +358,11 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 /* top player closer to the table */
 .felt3d { top: -3%; }
 .seat.top { margin-top: 8px; }
+
+/* trump: a single card in the top-right pill */
+.trump { gap: 8px; padding: 5px 6px 5px 10px; min-height: 0; }
+.trump .tl { font-size: 11px; color: var(--muted); font-weight: 600; }
+.trump .tile .front { display: flex; align-items: center; justify-content: center; }
+.trump .tile .cc { position: static; font-size: 30px; }
+.trump .tile.tn .cc { color: var(--gold); font-size: 26px; }
+.ltc, .game.two .ltc, .voice.ingame { top: calc(env(safe-area-inset-top, 0px) + 82px); }
