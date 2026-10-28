@@ -228,7 +228,7 @@ function trickWinner(trick, trump) {
 
 function scoreFor(bid, taken, cards) {
   if (bid === 0) return taken === 0 ? 50 : taken * 10; // pass: 50 if nothing taken, else 10 per trick
-  if (taken !== bid) return -200;
+  if (taken !== bid) return taken === 0 ? -200 : taken * 10; // failed bid: 10 per trick taken, -200 if none
   if (bid === cards) return 100 * bid;
   return 50 + 50 * bid;
 }
