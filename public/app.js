@@ -867,9 +867,3 @@ boot();
 // iOS Safari ignores user-scalable=no: block pinch and double-tap zoom by hand
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
 document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-let lastTouchEnd = 0;
-document.addEventListener('touchend', e => {
-  const now = Date.now();
-  if (now - lastTouchEnd < 350) e.preventDefault();
-  lastTouchEnd = now;
-}, { passive: false });
