@@ -322,38 +322,6 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .ltc, .game.two .ltc { top: calc(env(safe-area-inset-top, 0px) + 66px); }
 .voice.ingame { top: calc(env(safe-area-inset-top, 0px) + 66px); }
 
-/* ---------- text chat: transparent layer over the game ---------- */
-.chat { position: fixed; z-index: 30; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; width: min(78vw, 300px); pointer-events: none; }
-.chat[hidden] { display: none; }
-.chat > * { pointer-events: auto; }
-.chat .cfloat { pointer-events: none; }
-.chat.ingame { right: max(10px, calc(50% - 250px)); bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
-.game.two ~ .chat.ingame, .chat.ingame.two { bottom: calc(206px + env(safe-area-inset-bottom, 0px)); }
-.chat.lobby { right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
-.chatbtn { position: relative; width: 44px; height: 44px; flex: none; border-radius: 50%; border: 0; background: rgba(0,0,0,.4); color: #fff; font-size: 20px; line-height: 1; backdrop-filter: blur(3px); box-shadow: 0 2px 10px rgba(0,0,0,.4); }
-.cbadge { position: absolute; top: -4px; right: -4px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px; background: #e53935; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-.cbadge[hidden] { display: none; }
-.cfloat, .cfeed { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; width: 100%; }
-.cfeed { display: none; max-height: 34vh; overflow-y: auto; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%); mask-image: linear-gradient(to bottom, transparent 0, #000 22%); padding-top: 16px; scrollbar-width: none; }
-.cfeed::-webkit-scrollbar { display: none; }
-.chat.open .cfeed { display: flex; }
-.chat.open .cfloat { display: none; }
-.cform { display: none; gap: 6px; width: 100%; }
-.chat.open .cform { display: flex; }
-.cmsg { max-width: 100%; display: flex; }
-.cmsg.mine { align-self: flex-end; }
-.cmsg.other { align-self: flex-start; }
-.cfeed .cmsg, .cfloat .cmsg { animation: ltIn .2s ease-out; }
-.cfloat .cmsg.out { opacity: 0; transition: opacity .6s; }
-.ctext { padding: 6px 11px; border-radius: 14px; font-size: 14px; line-height: 1.3; word-break: break-word; white-space: pre-wrap; background: rgba(0,0,0,.42); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
-.cmsg.mine .ctext { background: rgba(242,193,78,.62); color: #1b1b1f; text-shadow: none; border-bottom-right-radius: 4px; }
-.cmsg.other .ctext { border-bottom-left-radius: 4px; }
-.cname { color: var(--gold); font-weight: 700; }
-.ctime { margin-left: 7px; font-size: 10px; opacity: .6; white-space: nowrap; }
-.cinput { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 20px; background: rgba(0,0,0,.5); color: #fff; border: 1px solid rgba(255,255,255,.22); font-size: 16px; }
-.cinput::placeholder { color: rgba(255,255,255,.55); }
-.cinput:focus { border-color: var(--gold); }
-.csend { width: 42px; height: 42px; flex: none; border: 0; border-radius: 50%; background: rgba(242,193,78,.9); color: var(--ink); font-size: 17px; font-weight: 700; }
 
 /* top player closer to the table */
 .felt3d { top: -3%; }
@@ -471,3 +439,42 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .slotc.jgive .jaura { animation: jaura 1.4s ease-out both; }
 .center.ending .jbadge { animation: ltIn .3s ease-out .3s both, fadeOut .3s ease-in 1.15s both; }
 .center.ending.hasjoker .jbadge { animation: ltIn .3s ease-out .3s both, fadeOut .3s ease-in 2.65s both; }
+
+/* ---------- text chat: translucent feed always visible, 💬 unfolds it ---------- */
+.chat { position: fixed; z-index: 30; display: block; width: auto; pointer-events: none; }
+.chat[hidden] { display: none; }
+.chat > * { pointer-events: auto; }
+.chat.ingame { right: max(10px, calc(50% - 250px)); bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
+.game.two ~ .chat.ingame, .chat.ingame.two { bottom: calc(172px + env(safe-area-inset-bottom, 0px)); }
+.chat.lobby { right: 14px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
+.chatbtn { width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(0,0,0,.4); color: #fff; font-size: 20px; line-height: 1; backdrop-filter: blur(3px); box-shadow: 0 2px 10px rgba(0,0,0,.4); }
+
+#chatfeed { position: fixed; z-index: 28; width: min(56vw, 230px); display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; }
+#chatfeed[hidden] { display: none; }
+#chatfeed.ingame { right: max(10px, calc(50% - 250px)); top: calc(env(safe-area-inset-top, 0px) + 128px); }
+#chatfeed.lobby { right: 14px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); width: min(78vw, 300px); }
+#chatfeed .cfeed { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; width: 100%; max-height: 168px; overflow: hidden; }
+#chatfeed .cform { display: none; gap: 6px; width: 100%; pointer-events: auto; }
+#chatfeed.open { width: min(78vw, 300px); pointer-events: auto; }
+#chatfeed.open .cfeed { max-height: 40vh; overflow-y: auto; pointer-events: auto; scrollbar-width: none; background: rgba(0,0,0,.18); border-radius: 14px; padding: 8px; }
+#chatfeed.open .cfeed::-webkit-scrollbar { display: none; }
+#chatfeed.open .cform { display: flex; }
+/* folded: older messages fade out, newest is the most opaque */
+#chatfeed:not(.open) .cmsg { opacity: .9; }
+#chatfeed:not(.open) .cmsg:nth-last-child(2) { opacity: .75; }
+#chatfeed:not(.open) .cmsg:nth-last-child(3) { opacity: .58; }
+#chatfeed:not(.open) .cmsg:nth-last-child(4) { opacity: .42; }
+#chatfeed:not(.open) .cmsg:nth-last-child(5) { opacity: .28; }
+.cmsg { max-width: 100%; display: flex; }
+.cmsg.mine { align-self: flex-end; }
+.cmsg.other { align-self: flex-start; }
+.ctext { padding: 5px 10px; border-radius: 13px; font-size: 13px; line-height: 1.3; word-break: break-word; white-space: pre-wrap; background: rgba(0,0,0,.38); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.cmsg.mine .ctext { background: rgba(242,193,78,.6); color: #1b1b1f; text-shadow: none; border-bottom-right-radius: 4px; }
+.cmsg.other .ctext { border-bottom-left-radius: 4px; }
+.cname { color: var(--gold); font-weight: 700; }
+.ctime { margin-left: 7px; font-size: 10px; opacity: .6; white-space: nowrap; }
+.cinput { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 20px; background: rgba(0,0,0,.55); color: #fff; border: 1px solid rgba(255,255,255,.22); font-size: 16px; }
+.cinput::placeholder { color: rgba(255,255,255,.55); }
+.cinput:focus { border-color: var(--gold); }
+.csend { width: 42px; height: 42px; flex: none; border: 0; border-radius: 50%; background: rgba(242,193,78,.9); color: var(--ink); font-size: 17px; font-weight: 700; }
+.modal-open #chat, .modal-open #chatfeed { display: none; }
