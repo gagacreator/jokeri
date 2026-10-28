@@ -736,7 +736,7 @@ function scoreTable(g) {
     const h = g.history[idx];
     if (h) {
       h.points.forEach((p, i) => { pulkaTotals[i] += p; });
-      rows += `<tr><td class="l">${h.cards}</td>${h.points.map((p, i) => `<td class="b">${h.bids[i] || '–'}</td><td class="p ${p > 0 ? 'ok' : 'bad'}">${p}</td>`).join('')}</tr>`;
+      rows += `<tr><td class="l">${h.cards}</td>${h.points.map((p, i) => `<td class="b">${h.bids[i] || '–'}</td><td class="p ${h.bids[i] === h.taken[i] ? 'ok' : 'bad'}">${p}</td>`).join('')}</tr>`;
     } else {
       const cur = idx === g.history.length && g.phase !== 'finished' ? g.bids : null; // bids of the deal in progress
       rows += `<tr><td class="l">${cards}</td>${[0, 1, 2, 3].map(i => `<td class="b">${cur && cur[i] !== null && cur[i] !== undefined ? (cur[i] || '–') : ''}</td><td class="p"></td>`).join('')}</tr>`;
