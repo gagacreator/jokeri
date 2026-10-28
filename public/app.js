@@ -14,6 +14,7 @@ let joinMode = null; // 'play' | 'watch' once the visitor chose
 let st = null; // latest table state
 let selected = null; // card id raised in hand
 let jokerPick = null; // joker card id awaiting mode choice
+let jokerOpenedAt = 0; // a quick second tap on the joker must not hit the choice buttons that just appeared
 let jokerMode = null; // 'high' (მიმყავს) / 'low' (არ მიმყავს) chosen while leading, before picking the suit
 let showScore = false;
 let showLast = false;
@@ -828,7 +829,7 @@ document.addEventListener('click', async e => {
     if (!g.legal.includes(id)) return toast(g.trick.length ? 'ამ კარტს ვერ ითამაშებ — უნდა მიჰყვე ნიშანს (ან დაკრა კოზირი)' : 'ამ კარტს ვერ ითამაშებ');
     const card = g.hand.find(c => c.id === id);
     // a joker opens its choice sheet right away (მიმყავს / არ მიმყავს); other cards: tap once to lift, twice to play
-    if (card.s === 'J') { selected = null; jokerPick = id; jokerMode = null; return renderGame(); }
+    if (card.s === 'J') { selected = null; jokerPick = id; jokerMode = null; jokerOpenedAt = performance.now(); return renderGame(); }
     if (selected !== id) { selected = id; return renderGame(); }
     return playCard(id);
   }
@@ -874,11 +875,14 @@ document.addEventListener('click', async e => {
     case 'bid': return emit('game:bid', Number(el.dataset.n));
     case 'trump': return emit('game:trump', el.dataset.s);
     case 'jmode': {
+      if (performance.now() - jokerOpenedAt < 600) return;
       const g = st.game;
       if (g.trick.length === 0) { jokerMode = el.dataset.mode; return renderGame(); } // leading: pick the suit next
       return playCard(jokerPick, { mode: el.dataset.mode });
     }
-    case 'joker': return playCard(jokerPick, { mode: jokerMode || el.dataset.mode, suit: el.dataset.s });
+    case 'joker':
+      if (performance.now() - jokerOpenedAt < 600) return;
+      return playCard(jokerPick, { mode: jokerMode || el.dataset.mode, suit: el.dataset.s });
     case 'joker-cancel': jokerPick = null; jokerMode = null; return renderGame();
     case 'rematch': return emit('game:rematch');
   }
