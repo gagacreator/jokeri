@@ -637,3 +637,28 @@ table.score tr.pl td small.cut { color: #ff8a80; }
 .scoresheet table.score td small { font-size: 9px; }
 .scoresheet table.score tfoot td { bottom: -8px; background: rgba(12,40,31,.95); font-size: 14px; padding: 6px 1px 3px; }
 .scoresheet .legend { display: none; }
+
+/* minimalist scoreboard: bid in white, points green (made) / red (failed), no cell backgrounds */
+.scoresheet { background: rgba(8,16,40,.82); }
+.scoresheet table.score { border-spacing: 0; font-size: 14px; table-layout: fixed; }
+.scoresheet table.score th { top: -10px; background: rgba(8,16,40,.95); padding: 2px 0 6px; font-size: 13px; color: #fff; font-weight: 700; border: 0; }
+.scoresheet table.score th.l, .scoresheet table.score td.l { width: 22px; text-align: center; padding: 0; color: #8fb8ff; font-weight: 700; }
+.scoresheet table.score td { padding: 3px 0; border: 0; background: none; }
+.scoresheet table.score td.b { text-align: right; color: #fff; width: 14px; padding-right: 4px; }
+.scoresheet table.score td.p { text-align: left; font-weight: 600; }
+.scoresheet table.score td.p.ok { color: #7bd34a; }
+.scoresheet table.score td.p.bad { color: #e0453d; }
+.scoresheet table.score td:nth-child(2n+1):not(.l) { border-left: 1px solid rgba(255,255,255,.07); }
+.scoresheet table.score tr.pl td { background: none; border: 0; border-top: 1px solid rgba(143,184,255,.35); color: var(--gold); font-weight: 700; font-size: 12px; padding: 3px 0; text-align: center; }
+.scoresheet table.score tr.pl td.l { border-top: 0; }
+.scoresheet table.score .pt small { font-size: 10px; color: #7bd34a; margin: 0; display: inline; }
+.scoresheet table.score .pt small.cut { color: #e0453d; }
+.scoresheet table.score tfoot td { background: rgba(8,16,40,.95); border-top: 1px solid rgba(255,255,255,.18); font-size: 15px; font-weight: 700; padding: 6px 0 2px; text-align: center; bottom: -8px; }
+.scoresheet table.score tfoot td.ok { color: #7bd34a; }
+.scoresheet table.score tfoot td.bad { color: #e0453d; }
+.scoresheet h3 { display: none; }
+.scoresheet .xbtn { top: 4px; right: 6px; width: 24px; height: 24px; line-height: 24px; font-size: 12px; background: rgba(255,255,255,.1); }
+.sheet.scoresheet { padding-top: 30px; }
+.scoresheet table.score tbody td { height: 22px; line-height: 16px; }
+.scoresheet table.score tbody td:empty::before { content: "\00a0"; }
+.scoresheet table.score tr.pl td { height: 20px; }

@@ -617,9 +617,8 @@ function jokerHtml(g) {
 }
 
 function scoreTable(g) {
-  const lead = Math.max(...g.totals);
-  const head = g.names.map((n, i) => `<th class="${i === st.seat ? 'me' : ''}">${avatar(i, n, '', 'sm')}<span>${esc(n)}${lead > 0 && g.totals[i] === lead ? ' 👑' : ''}</span></th>`).join('');
-  // full layout from the start: 1..8, 9x4, 8..1, 9x4
+  const head = g.names.map((n, i) => `<th colspan="2" class="${i === st.seat ? 'me' : ''}">${esc(n)}</th>`).join('');
+  // full layout from the start: 1..8, 9x4, 8..1, 9x4; per player: bid, then points (green made / red failed)
   const plan = [];
   for (let c = 1; c <= 8; c++) plan.push([0, c]);
   for (let i = 0; i < 4; i++) plan.push([1, 9]);
@@ -630,27 +629,25 @@ function scoreTable(g) {
   const flushPulka = p => {
     const bn = g.bonuses[p] || [0, 0, 0, 0];
     const ct = (g.cuts && g.cuts[p]) || [0, 0, 0, 0];
-    rows += `<tr class="pl"><td class="l">პულკა ${p + 1}</td>${pulkaTotals.map((v, i) => `<td>${v + bn[i] - ct[i]}${bn[i] ? `<small>+${bn[i]} პრემია</small>` : ''}${ct[i] ? `<small class="cut">−${ct[i]} წაშლა</small>` : ''}</td>`).join('')}</tr>`;
+    rows += `<tr class="pl"><td class="l"></td>${pulkaTotals.map((v, i) => `<td colspan="2" class="pt">${v + bn[i] - ct[i]}${bn[i] ? ` <small>+${bn[i]}</small>` : ''}${ct[i] ? ` <small class="cut">−${ct[i]}</small>` : ''}</td>`).join('')}</tr>`;
     pulkaTotals.fill(0);
   };
   plan.forEach(([pulka, cards], idx) => {
     const h = g.history[idx];
     if (h) {
       h.points.forEach((p, i) => { pulkaTotals[i] += p; });
-      const trump = h.trump === 'N' ? '<span class="tn">∅</span>' : `<span class="${isRed(h.trump) ? 'red' : ''}">${SYM[h.trump]}</span>`;
-      rows += `<tr><td class="l"><b>${h.cards}</b>${trump}</td>${h.points.map((p, i) => `
-        <td class="cell ${h.bids[i] === h.taken[i] ? 'hit' : 'miss'}"><b>${p}</b><small>${h.bids[i]} · ${h.taken[i]}</small></td>`).join('')}</tr>`;
+      rows += `<tr><td class="l">${h.cards}</td>${h.points.map((p, i) => `<td class="b">${h.bids[i] || '–'}</td><td class="p ${h.bids[i] === h.taken[i] ? 'ok' : 'bad'}">${p}</td>`).join('')}</tr>`;
     } else {
-      rows += `<tr><td class="l"><b>${cards}</b></td>${'<td class="cell empty"><b>&nbsp;</b></td>'.repeat(4)}</tr>`;
+      const cur = idx === g.history.length && g.phase !== 'finished' ? g.bids : null; // bids of the deal in progress
+      rows += `<tr><td class="l">${cards}</td>${[0, 1, 2, 3].map(i => `<td class="b">${cur && cur[i] !== null && cur[i] !== undefined ? (cur[i] || '–') : ''}</td><td class="p"></td>`).join('')}</tr>`;
     }
     if (idx + 1 === plan.length || plan[idx + 1][0] !== pulka) {
       if (g.history.length > idx) flushPulka(pulka);
-      else { rows += `<tr class="pl"><td class="l">პულკა ${pulka + 1}</td>${'<td>&nbsp;</td>'.repeat(4)}</tr>`; pulkaTotals.fill(0); }
+      else { rows += `<tr class="pl"><td class="l"></td><td colspan="8" class="pt"></td></tr>`; pulkaTotals.fill(0); }
     }
   });
-  return `<table class="score"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody>
-    <tfoot><tr class="tot"><td class="l">ჯამი</td>${g.totals.map((v, i) => `<td class="${lead > 0 && v === lead ? 'lead' : ''}">${v}</td>`).join('')}</tr></tfoot></table>
-    <div class="legend"><span><i class="hit"></i>დაკვეთა შესრულდა</span><span>უჯრაში: <b>დაკვეთა · აღებული</b></span></div>`;
+  const tot = g.totals.map(v => `<td colspan="2" class="${v > 0 ? 'ok' : v < 0 ? 'bad' : ''}">${v}</td>`).join('');
+  return `<table class="score"><thead><tr><th class="l"></th>${head}</tr></thead><tbody>${rows}</tbody><tfoot><tr class="tot"><td class="l"></td>${tot}</tr></tfoot></table>`;
 }
 
 function scoreHtml(g) {
