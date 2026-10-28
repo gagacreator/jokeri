@@ -58,6 +58,8 @@ async function main() {
           if (g.phase === 'bidding') {
             const opts = [...Array(g.cards + 1).keys()].filter(n => n !== g.forbiddenBid);
             s.emit('game:bid', pick(opts), ack);
+          } else if (g.phase === 'trump') {
+            s.emit('game:trump', pick(['S', 'C', 'D', 'H', 'N']), ack);
           } else if (g.phase === 'playing') {
             const id = pick(g.legal);
             s.emit('game:play', { id, mode: pick(['high', 'low']), suit: pick(['S', 'C', 'D', 'H']) }, ack);

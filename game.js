@@ -62,6 +62,7 @@ function newGame(names) {
     tricksWon: [0, 0, 0, 0],
     trump: null,
     trumpCard: null,
+    trumpChooser: null,
     trick: [],
     lastTrick: null,
     trickWinner: null,
@@ -79,10 +80,16 @@ function startDeal(g) {
   g.dealer = (g.firstDealer + g.dealIdx) % 4;
   const deck = shuffle(buildDeck());
   g.hands = [0, 1, 2, 3].map(i => deck.slice(i * g.cards, (i + 1) * g.cards));
-  // Pulkas 1 and 3: the next card of the stock is turned up.
-  // Pulkas 2 and 4 (9 cards): the dealer's last card is dealt face up.
-  g.trumpCard = g.cards < 9 ? deck[4 * g.cards] : g.hands[g.dealer][g.cards - 1];
-  g.trump = g.trumpCard.s === 'J' ? 'N' : g.trumpCard.s; // 'N' = no trumps
+  // Pulkas 1 and 3 (1..8 cards): the next card of the stock is turned up for trumps.
+  // Pulkas 2 and 4 (9 cards): nothing is turned up; the highest bidder names the trump after bidding.
+  g.trumpChooser = null;
+  if (g.cards < 9) {
+    g.trumpCard = deck[4 * g.cards];
+    g.trump = g.trumpCard.s === 'J' ? 'N' : g.trumpCard.s; // 'N' = no trumps (a joker was turned)
+  } else {
+    g.trumpCard = null;
+    g.trump = null;
+  }
   g.bids = [null, null, null, null];
   g.tricksWon = [0, 0, 0, 0];
   g.trick = [];
@@ -116,10 +123,31 @@ function bid(g, seat, n) {
   const idx = order.indexOf(seat);
   if (idx < 3) {
     g.turn = order[idx + 1];
+  } else if (g.cards === 9) {
+    const max = Math.max(...g.bids);
+    if (max === 0) {
+      g.trump = 'N'; // everybody passed: no trumps
+      g.phase = 'playing';
+      g.turn = g.leader;
+    } else {
+      // the first player (in bidding order) with the highest bid names the trump
+      g.trumpChooser = order.find(s => g.bids[s] === max);
+      g.phase = 'trump';
+      g.turn = g.trumpChooser;
+    }
   } else {
     g.phase = 'playing';
     g.turn = g.leader;
   }
+}
+
+function chooseTrump(g, seat, suit) {
+  if (g.phase !== 'trump') fail('არასწორი ფაზა');
+  if (g.turn !== seat) fail('ახლა შენი რიგი არ არის');
+  if (suit !== 'N' && !SUITS.includes(suit)) fail('არასწორი კოზირი');
+  g.trump = suit;
+  g.phase = 'playing';
+  g.turn = g.leader;
 }
 
 function ledSuit(trick) {
@@ -280,6 +308,7 @@ function viewFor(g, seat) {
     bids: g.bids,
     trump: g.trump,
     trumpCard: g.trumpCard,
+    trumpChooser: g.trumpChooser,
     trick: g.trick,
     trickWinner: g.phase === 'trickEnd' ? g.trickWinner : null,
     lastTrick: g.lastTrick,
@@ -297,6 +326,6 @@ function viewFor(g, seat) {
 }
 
 module.exports = {
-  SUITS, DEALS, newGame, bid, play, advance, legalPlays,
+  SUITS, DEALS, newGame, bid, chooseTrump, play, advance, legalPlays,
   viewFor, trickWinner, scoreFor, ledSuit, buildDeck,
 };

@@ -304,10 +304,12 @@ function backs(n) {
 }
 
 function trumpChip(g) {
-  if (g.trumpCard === null || g.trumpCard === undefined) return '<div class="col"><span class="tl">კოზირი</span><span class="tsym">—</span></div>';
+  if (g.trump === null || g.trump === undefined) return '<div class="col"><span class="tl">კოზირი</span><span class="tsym">—</span></div>';
   if (g.trump === 'N') return '<div class="col"><span class="tl">კოზირი</span><span class="tsym tn">∅</span></div><span class="tnone">უკოზირო</span>';
+  const sym = `<div class="col"><span class="tl">კოზირი</span><span class="tsym ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span></div>`;
+  if (!g.trumpCard) return sym; // named by a player (9-card deals): no turned card
   const delay = dealTotalMs(g) - elapsed(dealKey(g));
-  return `${card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${delay}ms` })}<div class="col"><span class="tl">კოზირი</span><span class="tsym ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span></div>`;
+  return card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${delay}ms` }) + sym;
 }
 
 const AVATAR_COLORS = ['#e8b04a', '#62b0e0', '#d58bc8', '#82cc86'];
@@ -374,6 +376,7 @@ function lastTrickHtml(g) {
 
 function statusText(g, mySeat) {
   if (g.phase === 'bidding') return g.turn === mySeat ? 'შენი დაკვეთის რიგია' : `${g.names[g.turn]} აკვეთებს…`;
+  if (g.phase === 'trump') return g.turn === mySeat ? 'აირჩიე კოზირი' : `${g.names[g.turn]} ირჩევს კოზირს…`;
   if (g.phase === 'playing') return g.turn === mySeat ? 'შენი სვლაა' : `${g.names[g.turn]}-ის სვლაა`;
   if (g.phase === 'trickEnd') return `${g.names[g.trickWinner]} იღებს ხელს`;
   return '';
@@ -418,23 +421,37 @@ function renderDraw(g, mySeat) {
     </div>`;
 }
 
+// one row while the cards fit without heavy overlap, otherwise two rows
+function handRows(n) {
+  const avail = Math.min(window.innerWidth, 520) - 56; // margin for the fan rotation
+  const needOverlap = n > 1 ? (n * 56 - avail) / (n - 1) : 0;
+  return n >= 2 && needOverlap > 8 ? 2 : 1;
+}
+
 function handHtml(g, playingTurn, dealT) {
   const n = g.hand.length;
   const cardW = 56;
-  const avail = Math.min(window.innerWidth, 520) - 24;
-  const overlap = n > 1 ? Math.max(4, (n * cardW - avail) / (n - 1)) : 0;
-  const ang = Math.min(5, 36 / Math.max(n, 1));
+  const avail = Math.min(window.innerWidth, 520) - 56; // margin for the fan rotation
+  const rows = handRows(n);
+  const perRow = rows === 2 ? [Math.ceil(n / 2), Math.floor(n / 2)] : [n];
   const step = dealStep(g);
   const pos = (st.seat - g.dealer - 1 + 4) % 4;
-  return g.hand.map((c, i) => {
-    const mid = (n - 1) / 2;
-    const off = i - mid;
-    const cls = ['hc', !playingTurn || g.legal.includes(c.id) ? 'ok' : 'dim', playingTurn ? 'myturn' : '', selected === c.id ? 'sel' : ''].join(' ');
-    const k = i * 4 + pos; // order in which this card is dealt out
-    const delay = k * step - dealT;
-    const style = `--rot:${(off * ang).toFixed(1)}deg;--ty:${(off * off * 0.9).toFixed(1)}px;${i ? `margin-left:${-overlap}px` : ''}`;
-    const inner = card3d(c, { cls: dealT < dealTotalMs(g) ? 'dealin' : '', style: dealT < dealTotalMs(g) ? `animation-delay:${delay}ms` : '' });
-    return `<div class="${cls}" style="${style}" data-id="${c.id}">${inner}</div>`;
+  const dealing = dealT < dealTotalMs(g);
+  let idx = 0;
+  return perRow.map(count => {
+    const overlap = count > 1 ? Math.max(rows === 2 ? -4 : 4, (count * cardW - avail) / (count - 1)) : 0;
+    const ang = rows === 2 ? Math.min(2.5, 14 / count) : Math.min(5, 36 / Math.max(count, 1));
+    const cards = g.hand.slice(idx, idx + count).map((c, j) => {
+      const i = idx + j;
+      const off = j - (count - 1) / 2;
+      const cls = ['hc', !playingTurn || g.legal.includes(c.id) ? 'ok' : 'dim', playingTurn ? 'myturn' : '', selected === c.id ? 'sel' : ''].join(' ');
+      const delay = (i * 4 + pos) * step - dealT; // order in which this card is dealt out
+      const style = `--rot:${(off * ang).toFixed(1)}deg;--ty:${(off * off * (rows === 2 ? 0.4 : 0.9)).toFixed(1)}px;${j ? `margin-left:${-overlap}px` : ''}`;
+      const inner = card3d(c, { cls: dealing ? 'dealin' : '', style: dealing ? `animation-delay:${delay}ms` : '' });
+      return `<div class="${cls}" style="${style}" data-id="${c.id}">${inner}</div>`;
+    }).join('');
+    idx += count;
+    return `<div class="hrow">${cards}</div>`;
   }).join('');
 }
 
@@ -468,8 +485,9 @@ function renderGame() {
   const dealing = dealT < dealTotalMs(g);
   if (dealing) rerenderIn(dealTotalMs(g) - dealT + 30);
 
+  const two = handRows(g.hand.length) === 2;
   app.innerHTML = `
-    <div class="game">
+    <div class="game ${two ? 'two' : ''}">
       <div class="felt3d">${g.trump && g.trump !== 'N' ? `<span class="tmark ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span>` : ''}</div>
       <div class="topbar">
         <button class="iconbtn" data-act="score">ცხრილი</button>
@@ -505,6 +523,13 @@ function overlayHtml(g, mySeat, dealing) {
       ${known ? `<div class="muted" style="text-align:center">${known}</div>` : ''}
       <div class="numgrid">${nums.map(n => `<button class="btn" data-act="bid" data-n="${n}" ${g.forbiddenBid === n ? 'disabled' : ''}>${n}</button>`).join('')}</div>
       ${g.forbiddenBid !== null ? `<div class="muted" style="text-align:center">შენ (დილერს) ${g.forbiddenBid} არ შეგიძლია</div>` : ''}
+    </div></div>`;
+  }
+  if (myTurn && g.phase === 'trump' && !dealing) {
+    return `<div class="overlay panel"><div class="sheet trumpsheet">
+      <h3>აირჩიე კოზირი</h3>
+      <div class="suitrow">${['D', 'C', 'H', 'S'].map(x => `<button class="suitbtn ${isRed(x) ? 'red' : 'blk'}" data-act="trump" data-s="${x}">${SYM[x]}</button>`).join('')}</div>
+      <button class="suitbtn jbtn" data-act="trump" data-s="N"><span class="jstar">★</span><span class="jl">J</span><span class="jt">უკოზირო</span></button>
     </div></div>`;
   }
   return '';
@@ -647,6 +672,7 @@ document.addEventListener('click', async e => {
     case 'score': showScore = true; return renderGame();
     case 'score-close': showScore = false; return renderGame();
     case 'bid': return emit('game:bid', Number(el.dataset.n));
+    case 'trump': return emit('game:trump', el.dataset.s);
     case 'joker': {
       const id = jokerPick;
       return playCard(id, { mode: el.dataset.mode, suit: el.dataset.s });

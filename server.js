@@ -306,6 +306,11 @@ io.on('connection', socket => {
     G.bid(t.game, seat, n);
   }));
 
+  socket.on('game:trump', (suit, cb) => withTable(cb, (t, seat) => {
+    if (!t.game || seat < 0) throw new Error('თამაში არ მიდის');
+    G.chooseTrump(t.game, seat, suit);
+  }));
+
   socket.on('game:play', (msg, cb) => withTable(cb, (t, seat) => {
     if (!t.game || seat < 0) throw new Error('თამაში არ მიდის');
     G.play(t.game, seat, String(msg?.id), { mode: msg?.mode, suit: msg?.suit });

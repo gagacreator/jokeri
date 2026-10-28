@@ -292,3 +292,24 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .legend b { color: #fff; font-weight: 600; }
 .neg { color: var(--danger); }
 .pos { color: #9be29b; }
+
+/* trump chooser */
+.sheet.trumpsheet { background: rgba(9,16,48,.96); gap: 10px; padding: 14px; }
+.suitrow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.suitbtn { border: 0; border-radius: 10px; background: #fff; min-height: 56px; font-size: 34px; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.suitbtn.red { color: #c62828; }
+.suitbtn.blk { color: #111; }
+.suitbtn:active { transform: scale(.96); }
+.suitbtn.jbtn { width: 100%; min-height: 52px; gap: 10px; font-size: 16px; color: #111; position: relative; }
+.suitbtn.jbtn .jstar { color: #c62828; font-size: 18px; }
+.suitbtn.jbtn .jl { font-size: 30px; font-weight: 900; }
+.suitbtn.jbtn .jt { font-size: 13px; color: #555; font-weight: 600; }
+
+/* hand in two rows when one row would overlap too much */
+.hand { flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; }
+.hrow { display: flex; justify-content: center; align-items: flex-end; }
+.hrow + .hrow { margin-top: -34px; }
+.game.two .hand { height: 196px; padding-top: 14px; }
+.game.two .ltc { bottom: calc(206px + env(safe-area-inset-bottom)); }
+.game.two .overlay.panel { padding-bottom: calc(222px + env(safe-area-inset-bottom)); }
+.game.two .hrow:first-child .hc.sel { transform: translateY(calc(var(--ty, 0px) - 16px)) rotate(var(--rot, 0deg)); }
