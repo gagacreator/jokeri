@@ -304,9 +304,27 @@ function backs(n) {
 }
 
 function trumpChip(g) {
-  if (g.trumpCard === null || g.trumpCard === undefined) return '<span class="sym">—</span>კოზირი';
-  if (g.trump === 'N') return '<span class="sym">∅</span>უკოზირო';
-  return card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${dealTotalMs(g) - elapsed(dealKey(g))}ms` }) + 'კოზირი';
+  if (g.trumpCard === null || g.trumpCard === undefined) return '<div class="col"><span class="tl">კოზირი</span><span class="tsym">—</span></div>';
+  if (g.trump === 'N') return '<div class="col"><span class="tl">კოზირი</span><span class="tsym tn">∅</span></div><span class="tnone">უკოზირო</span>';
+  const delay = dealTotalMs(g) - elapsed(dealKey(g));
+  return `${card3d(g.trumpCard, { cls: 'flipin', style: `animation-delay:${delay}ms` })}<div class="col"><span class="tl">კოზირი</span><span class="tsym ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span></div>`;
+}
+
+const AVATAR_COLORS = ['#e8b04a', '#62b0e0', '#d58bc8', '#82cc86'];
+function avatar(seat, name, inner = '', cls = '') {
+  const initial = [...String(name)][0] || '?';
+  return `<div class="av ${cls}" style="--c:${AVATAR_COLORS[seat % 4]}">${esc(initial)}${inner}</div>`;
+}
+
+// bid as a number badge, tricks taken as filled pips (gold within the bid, red beyond it)
+function tally(g, seat) {
+  const bid = g.bids[seat];
+  if (bid === null) return g.phase === 'bidding' ? '<div class="tally"><span class="bn wait">…</span></div>' : '';
+  const taken = g.tricksWon[seat];
+  const n = Math.max(bid, taken);
+  let pips = '';
+  for (let i = 0; i < n; i++) pips += `<i class="${i < taken ? (i < bid ? 'on' : 'over') : ''}"></i>`;
+  return `<div class="tally"><span class="bn ${taken > bid ? 'over' : taken === bid ? 'ok' : ''}">${bid}</span>${pips ? `<span class="pips">${pips}</span>` : ''}</div>`;
 }
 
 const gameId = g => g.draw.seq.map(x => x.card.id).join('');
@@ -315,13 +333,13 @@ const dealStep = g => Math.min(80, 1800 / (4 * Math.max(1, g.cards)));
 const dealTotalMs = g => 4 * g.cards * dealStep(g) + 600;
 
 function seatBox(g, seat, pos) {
-  const name = g.names[seat];
-  const bid = g.bids[seat];
   const online = st.players[seat]?.online;
+  const dealer = g.dealer === seat ? '<span class="dealer">D</span>' : '';
   return `
     <div class="seat ${pos} ${g.turn === seat ? 'turn' : ''}" data-uid="${st.players[seat]?.uid || ''}">
-      <div class="nm">${g.dealer === seat ? '<span class="dealer">D</span>' : ''}<span class="dot ${online ? '' : 'off'}"></span>${esc(name)}</div>
-      <div class="st">${bid === null ? (g.phase === 'bidding' ? 'ფიქრობს…' : '') : `დაკვ. <b>${bid}</b> · აღ. <b>${g.tricksWon[seat]}</b>`}</div>
+      ${avatar(seat, g.names[seat], `${dealer}<span class="dot ${online ? '' : 'off'}"></span>`)}
+      <div class="nm">${esc(g.names[seat])}</div>
+      ${tally(g, seat)}
       <div class="minihand">${backs(g.handCounts[seat])}</div>
     </div>`;
 }
@@ -348,9 +366,9 @@ function trickHtml(g, mySeat) {
 function lastTrickHtml(g) {
   if (!g.lastTrick) return '';
   const items = g.lastTrick.map(t => `<div class="lt-item ${g.lastWinner === t.seat ? 'win' : ''}">${card3d(t.card)}<span>${esc(g.names[t.seat])}${g.lastWinner === t.seat ? ' ★' : ''}</span></div>`).join('');
-  return `<div class="lt">
-    <button class="lt-toggle" data-act="last">ბოლო ხელი ${showLast ? '▴' : '▾'}${g.lastWinner !== null ? ` · ${esc(g.names[g.lastWinner])}-მ წაიღო` : ''}</button>
+  return `<div class="ltc">
     ${showLast ? `<div class="lt-row">${items}</div>` : ''}
+    <button class="lt-toggle ${showLast ? 'open' : ''}" data-act="last">↺ ბოლო ხელი</button>
   </div>`;
 }
 
@@ -375,7 +393,8 @@ function renderDraw(g, mySeat) {
     const mine = seq.slice(0, shown).map((x, i) => ({ ...x, i })).filter(x => x.seat === seat);
     const win = done && g.draw.winner === seat;
     return `<div class="seat ${posOf[rel]} ${win ? 'winner' : ''}" data-uid="${st.players[seat]?.uid || ''}">
-      <div class="nm">${win ? '<span class="dealer">D</span>' : ''}${esc(g.names[seat])}</div>
+      ${avatar(seat, g.names[seat], win ? '<span class="dealer">D</span>' : '')}
+      <div class="nm">${esc(g.names[seat])}</div>
       <div class="drawrow">${mine.map(x => card3d(x.card, {
         cls: `drawfly r${rel}`,
         style: `animation-delay:${-elapsed(`${key}:${x.i}`)}ms`,
@@ -448,15 +467,14 @@ function renderGame() {
   const dealT = elapsed(dealKey(g));
   const dealing = dealT < dealTotalMs(g);
   if (dealing) rerenderIn(dealTotalMs(g) - dealT + 30);
-  const bidTxt = g.bids[mySeat] === null ? '' : `დაკვეთა <b>${g.bids[mySeat]}</b> · აღებული <b>${g.tricksWon[mySeat]}</b>`;
 
   app.innerHTML = `
     <div class="game">
-      <div class="felt3d"></div>
+      <div class="felt3d">${g.trump && g.trump !== 'N' ? `<span class="tmark ${isRed(g.trump) ? 'red' : ''}">${SYM[g.trump]}</span>` : ''}</div>
       <div class="topbar">
         <button class="iconbtn" data-act="score">ქულები</button>
-        <div class="info">პულკა <b>${g.pulka + 1}</b>/4 · დარიგება <b>${g.dealIdx + 1}</b>/${g.totalDeals}<br>${g.cards} კარტი</div>
-        <div class="trumpchip">${trumpChip(g)}</div>
+        <div class="info">პულკა <b>${g.pulka + 1}</b>/4<br>${g.dealIdx + 1}/${g.totalDeals} · ${g.cards} კარტი</div>
+        <div class="trump">${trumpChip(g)}</div>
       </div>
       <div class="board">
         ${seatBox(g, seatAt(2), 'top')}
@@ -465,10 +483,10 @@ function renderGame() {
         ${seatBox(g, seatAt(3), 'right')}
         ${dealing ? ghostsHtml(g, mySeat, dealT) : ''}
       </div>
-      ${lastTrickHtml(g)}
       <div class="status ${myTurn ? 'mine' : ''}">${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, mySeat))}</div>
-      <div class="mine-info"><span class="nm">${g.dealer === mySeat ? '<span class="dealer">D</span> ' : ''}${esc(g.names[mySeat])}</span> ${bidTxt ? '· ' + bidTxt : ''}</div>
+      <div class="mine-info ${g.turn === mySeat ? 'turn' : ''}">${avatar(mySeat, g.names[mySeat], g.dealer === mySeat ? '<span class="dealer">D</span>' : '', 'sm')}<span class="nm">${esc(g.names[mySeat])}</span>${tally(g, mySeat)}</div>
       <div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>
+      ${lastTrickHtml(g)}
       ${overlayHtml(g, mySeat, dealing)}
     </div>`;
 }
@@ -513,30 +531,32 @@ function jokerHtml(g) {
 }
 
 function scoreTable(g) {
-  const head = g.names.map(n => `<th>${esc(n)}</th>`).join('');
+  const lead = Math.max(...g.totals);
+  const head = g.names.map((n, i) => `<th class="${i === st.seat ? 'me' : ''}">${avatar(i, n, '', 'sm')}<span>${esc(n)}${lead > 0 && g.totals[i] === lead ? ' 👑' : ''}</span></th>`).join('');
   let rows = '';
   let lastPulka = -1;
   const pulkaTotals = [0, 0, 0, 0];
   const flushPulka = p => {
     const bn = g.bonuses[p] || [0, 0, 0, 0];
-    rows += `<tr class="pl"><td class="l">პულკა ${p + 1}</td>${pulkaTotals.map((v, i) => `<td>${v + bn[i]}${bn[i] ? `<small style="display:block;font-size:10px">+${bn[i]} ბონუსი</small>` : ''}</td>`).join('')}</tr>`;
+    rows += `<tr class="pl"><td class="l">პულკა ${p + 1}</td>${pulkaTotals.map((v, i) => `<td>${v + bn[i]}${bn[i] ? `<small>+${bn[i]} ბონუსი</small>` : ''}</td>`).join('')}</tr>`;
     pulkaTotals.fill(0);
   };
   g.history.forEach(h => {
     if (lastPulka !== -1 && h.pulka !== lastPulka) flushPulka(lastPulka);
     lastPulka = h.pulka;
     h.points.forEach((p, i) => { pulkaTotals[i] += p; });
-    rows += `<tr><td class="l">${h.cards}${h.trump && h.trump !== 'N' ? ` <span class="${isRed(h.trump) ? 'neg' : ''}">${SYM[h.trump]}</span>` : ''}</td>${h.points.map((p, i) => `
-      <td class="pts ${p < 0 ? 'neg' : 'pos'}">${p}<small>${h.bids[i]}/${h.taken[i]}</small></td>`).join('')}</tr>`;
+    const trump = h.trump === 'N' ? '<span class="tn">∅</span>' : `<span class="${isRed(h.trump) ? 'red' : ''}">${SYM[h.trump]}</span>`;
+    rows += `<tr><td class="l"><b>${h.cards}</b>${trump}</td>${h.points.map((p, i) => `
+      <td class="cell ${h.bids[i] === h.taken[i] ? 'hit' : 'miss'}"><b>${p}</b><small>${h.bids[i]} · ${h.taken[i]}</small></td>`).join('')}</tr>`;
   });
   if (g.history.length === g.totalDeals) flushPulka(lastPulka);
-  return `<table class="score"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}
-    <tr class="tot"><td class="l">ჯამი</td>${g.totals.map(v => `<td class="${v < 0 ? 'neg' : ''}">${v}</td>`).join('')}</tr></tbody></table>
-    <div class="muted" style="text-align:center">უჯრაში: ქულა, ქვემოთ დაკვეთა/აღებული</div>`;
+  return `<table class="score"><thead><tr><th></th>${head}</tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr class="tot"><td class="l">ჯამი</td>${g.totals.map((v, i) => `<td class="${lead > 0 && v === lead ? 'lead' : ''}">${v}</td>`).join('')}</tr></tfoot></table>
+    <div class="legend"><span><i class="hit"></i>დაკვეთა შესრულდა</span><span>უჯრაში: <b>დაკვეთა · აღებული</b></span></div>`;
 }
 
 function scoreHtml(g) {
-  return `<div class="overlay"><div class="sheet"><h3>ქულები</h3>${g.history.length ? scoreTable(g) : '<div class="muted" style="text-align:center">ქულები ჯერ არ არის</div>'}<button class="btn" data-act="score-close">დახურვა</button></div></div>`;
+  return `<div class="overlay"><div class="sheet wide"><h3>ქულები</h3>${g.history.length ? scoreTable(g) : '<div class="muted" style="text-align:center">ქულები ჯერ არ არის</div>'}<button class="btn" data-act="score-close">დახურვა</button></div></div>`;
 }
 
 function dealEndHtml(g) {
