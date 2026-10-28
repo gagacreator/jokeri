@@ -675,3 +675,18 @@ table.score tr.pl td small.cut { color: #ff8a80; }
 .seat.turn .av::after, .mine-info.turn .av::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; background: conic-gradient(var(--ring, #f2c14e) var(--p, 0%), rgba(255,255,255,.14) 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); }
 .seat.turn .av.late, .mine-info.turn .av.late { --ring: #ff5252; }
 .mine-info.turn .av.sm::after { inset: -5px; }
+
+/* tap a profile -> sound picker */
+.avtap { display: flex; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mine-info .av { cursor: default; }
+.av.shake { animation: avshake .7s ease-in-out; }
+@keyframes avshake { 0%,100% { transform: none; } 15% { transform: translateX(-5px) rotate(-8deg) scale(1.15); } 30% { transform: translateX(5px) rotate(8deg) scale(1.15); } 45% { transform: translateX(-4px) rotate(-6deg); } 60% { transform: translateX(4px) rotate(6deg); } 80% { transform: translateX(-2px); } }
+.overlay.soundov { background: rgba(0,0,0,.35); }
+.sheet.soundsheet { position: relative; width: min(88vw, 320px); padding: 14px 12px 12px; gap: 10px; border-radius: 18px; background: rgba(8,22,40,.92); }
+.soundsheet h3 { font-size: 15px; padding: 0 28px; }
+.soundsheet .xbtn { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; font-size: 13px; padding: 0; cursor: pointer; }
+.soundgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sbtn { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 6px; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(255,255,255,.07); color: #fff; font: inherit; cursor: pointer; }
+.sbtn:active { background: rgba(242,193,78,.25); }
+.sbtn span { font-size: 24px; line-height: 1; }
+.sbtn b { font-size: 12px; font-weight: 600; }

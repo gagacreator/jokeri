@@ -36,47 +36,80 @@ function tickTimer() {
 }
 setInterval(tickTimer, 100);
 
-// a stern buzz, then the recorded voice scolds the slow player for everyone at the table
+// ---------- sounds: tap a player's avatar to play one of these for the whole table ----------
+const SOUNDS = [
+  { id: 'bicho', label: 'ბიჭო, დროზე!', icon: '🗣️', file: '/bicho.mp3?v=1' },
+  { id: 'joker', label: 'ჯოკერი', icon: '🃏', file: '/joker.mp3?v=1' },
+  { id: 'wah', label: 'სევდიანი', icon: '😢' },
+  { id: 'clap', label: 'ტაში', icon: '👏' },
+  { id: 'bell', label: 'ზარი', icon: '🔔' },
+  { id: 'buzz', label: 'არასწორია', icon: '❌' },
+];
+const audioFiles = {};
+SOUNDS.filter(s => s.file).forEach(s => { audioFiles[s.id] = new Audio(s.file); audioFiles[s.id].preload = 'auto'; });
 let audioCtx = null;
-function buzz() {
+const ctx = () => (audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)());
+function tone(type, f0, f1, at, dur, vol = .3) {
+  const c = ctx();
+  const o = c.createOscillator();
+  const gn = c.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, c.currentTime + at);
+  if (f1 !== f0) o.frequency.linearRampToValueAtTime(f1, c.currentTime + at + dur);
+  gn.gain.setValueAtTime(.0001, c.currentTime + at);
+  gn.gain.exponentialRampToValueAtTime(vol, c.currentTime + at + .02);
+  gn.gain.exponentialRampToValueAtTime(.0001, c.currentTime + at + dur);
+  o.connect(gn).connect(c.destination);
+  o.start(c.currentTime + at);
+  o.stop(c.currentTime + at + dur + .02);
+}
+const SYNTH = {
+  buzz: () => { tone('sawtooth', 150, 110, 0, .24); tone('sawtooth', 150, 110, .28, .24); },
+  wah: () => { tone('sawtooth', 233, 233, 0, .4, .22); tone('sawtooth', 220, 220, .45, .4, .22); tone('sawtooth', 208, 208, .9, .4, .22); tone('sawtooth', 196, 150, 1.35, 1, .22); },
+  bell: () => { [0, .5, 1].forEach(d => { tone('sine', 880, 880, d, .6, .35); tone('sine', 1760, 1760, d, .4, .12); }); },
+  clap: () => {
+    const c = ctx();
+    for (let k = 0; k < 14; k++) {
+      const len = Math.floor(c.sampleRate * .06);
+      const buf = c.createBuffer(1, len, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = c.createBufferSource();
+      const gn = c.createGain();
+      const f = c.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 1800 + Math.random() * 1200;
+      gn.gain.value = .5;
+      src.buffer = buf;
+      src.connect(f).connect(gn).connect(c.destination);
+      src.start(c.currentTime + k * .11 + Math.random() * .05);
+    }
+  },
+};
+function playSound(id) {
   try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const t0 = audioCtx.currentTime;
-    [0, .28].forEach(d => {
-      const o = audioCtx.createOscillator();
-      const gn = audioCtx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(150, t0 + d);
-      o.frequency.linearRampToValueAtTime(110, t0 + d + .22);
-      gn.gain.setValueAtTime(.0001, t0 + d);
-      gn.gain.exponentialRampToValueAtTime(.3, t0 + d + .02);
-      gn.gain.exponentialRampToValueAtTime(.0001, t0 + d + .24);
-      o.connect(gn).connect(audioCtx.destination);
-      o.start(t0 + d);
-      o.stop(t0 + d + .26);
-    });
+    if (audioFiles[id]) { audioFiles[id].currentTime = 0; audioFiles[id].play().catch(() => {}); } else SYNTH[id]?.();
   } catch { /* audio is optional */ }
 }
-const scoldAudio = new Audio('/bicho.mp3?v=1');
-scoldAudio.preload = 'auto';
-function scold() {
-  scoldAudio.currentTime = 0;
-  // the recorded voice; the browser's speech synthesiser is only a fallback if playback is blocked
-  scoldAudio.play().catch(() => {
-    try {
-      if (!window.speechSynthesis) return;
-      const u = new SpeechSynthesisUtterance('ეეე ბიჭო, დროზე მოდი რააა!');
-      u.lang = 'ka-GE';
-      u.pitch = 0.5;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    } catch { /* speech is optional */ }
+function onSound(m) {
+  const s = SOUNDS.find(x => x.id === m.id);
+  toast(`${s?.icon || '🔊'} ${m.fromName} → ${m.toName}: ${s?.label || ''}`);
+  playSound(m.id);
+  // the target's avatar shakes while it plays
+  document.querySelectorAll(`[data-seat="${m.to}"] .av`).forEach(a => {
+    a.classList.remove('shake');
+    void a.offsetWidth;
+    a.classList.add('shake');
   });
 }
-function nag(n) {
-  toast(`⏰ ${n.name}, დროზე!`);
-  buzz();
-  setTimeout(scold, 650);
+let soundTarget = null; // seat whose profile was tapped (sound picker open)
+function soundsHtml() {
+  const g = st.game;
+  return `<div class="overlay mid soundov"><div class="sheet soundsheet">
+    <button class="xbtn" data-act="sounds-close" aria-label="დახურვა">✕</button>
+    <h3>${esc(g.names[soundTarget])}-ს გავუგზავნო</h3>
+    <div class="soundgrid">${SOUNDS.map(s => `<button class="sbtn" data-act="sound" data-id="${s.id}"><span>${s.icon}</span><b>${s.label}</b></button>`).join('')}</div>
+  </div></div>`;
 }
 let authMode = 'login';
 
@@ -152,6 +185,7 @@ function route() {
 function leaveTableView() {
   Voice.leaveTable();
   Chat.leave();
+  soundTarget = null;
   tableCode = null;
   joinMode = null;
   st = null;
@@ -280,7 +314,7 @@ function ensureSocket() {
     if (selected && !(g && g.legal.includes(selected))) selected = null;
     renderTable();
   });
-  socket.on('table:nag', n => nag(n));
+  socket.on('sound:play', onSound);
   socket.on('table:closed', () => {
     toast('მაგიდა დაიხურა');
     go('/');
@@ -454,8 +488,8 @@ function seatBox(g, seat, pos) {
   const online = st.players[seat]?.online;
   const dealer = g.dealer === seat ? '<span class="dealer">D</span>' : '';
   return `
-    <div class="seat ${pos} ${g.turn === seat ? 'turn' : ''}" data-uid="${st.players[seat]?.uid || ''}">
-      ${avatar(seat, g.names[seat], `${dealer}<span class="dot ${online ? '' : 'off'}"></span>`)}
+    <div class="seat ${pos} ${g.turn === seat ? 'turn' : ''}" data-uid="${st.players[seat]?.uid || ''}" data-seat="${seat}">
+      <div class="avtap" data-act="sounds" data-seat="${seat}">${avatar(seat, g.names[seat], `${dealer}<span class="dot ${online ? '' : 'off'}"></span>`)}</div>
       <div class="nm">${esc(g.names[seat])}</div>
       ${tally(g, seat)}
       ${g.allHands ? specCards(g.allHands[seat]) : `<div class="minihand">${backs(g.handCounts[seat])}</div>`}
@@ -627,10 +661,11 @@ function renderGame() {
         ${dealing ? ghostsHtml(g, mySeat, dealT) : ''}
       </div>
       <div class="status ${myTurn ? 'mine' : ''}">${spectator ? '👁 ' : ''}${esc(dealing ? 'კარტებს ვარიგებთ…' : statusText(g, spectator ? -1 : mySeat))}<b class="tmr"></b></div>
-      <div class="mine-info ${myTurn || (spectator && g.turn === 0) ? 'turn' : ''}">${avatar(mySeat, g.names[mySeat], g.dealer === mySeat ? '<span class="dealer">D</span>' : '', 'sm')}<span class="nm">${esc(g.names[mySeat])}</span>${tally(g, mySeat)}</div>
+      <div class="mine-info ${myTurn || (spectator && g.turn === 0) ? 'turn' : ''}" data-seat="${mySeat}">${avatar(mySeat, g.names[mySeat], g.dealer === mySeat ? '<span class="dealer">D</span>' : '', 'sm')}<span class="nm">${esc(g.names[mySeat])}</span>${tally(g, mySeat)}</div>
       ${spectator ? `<div class="hand spec" id="hand">${specCards(g.allHands[0], 'lg', 9)}</div>` : `<div class="hand" id="hand">${handHtml(g, playingTurn, dealT)}</div>`}
       ${lastTrickHtml(g)}
       ${overlayHtml(g, spectator ? -1 : mySeat, dealing)}
+      ${soundTarget !== null && !spectator ? soundsHtml() : ''}
     </div>`;
   tickTimer();
   document.getElementById('chat')?.classList.toggle('two', two);
@@ -795,6 +830,17 @@ document.addEventListener('click', async e => {
       leaveTableView();
       history.pushState({}, '', '/');
       return route();
+    case 'sounds':
+      if (!st?.game || st.seat < 0 || Number(el.dataset.seat) === st.seat) return;
+      soundTarget = Number(el.dataset.seat);
+      return renderGame();
+    case 'sounds-close': soundTarget = null; return renderGame();
+    case 'sound': {
+      const seat = soundTarget;
+      soundTarget = null;
+      renderGame();
+      return socket.emit('sound:send', { seat, id: el.dataset.id }, r => { if (r?.error) toast(r.error); });
+    }
     case 'choose-play': return joinAs('play');
     case 'choose-watch': return joinAs('watch');
     case 'sit': return socket.emit('table:join', tableCode, 'play', r => { if (r?.error) toast(r.error); else joinMode = 'play'; });

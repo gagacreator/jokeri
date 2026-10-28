@@ -14,7 +14,7 @@ const TRICK_DELAY = Number(process.env.TRICK_DELAY ?? 1800);
 const JOKER_EXTRA = Number(process.env.JOKER_EXTRA ?? 1500); // extra pause so a joker's animation can be seen
 const DEAL_DELAY = Number(process.env.DEAL_DELAY ?? 5000);
 const DRAW_STEP = Number(process.env.DRAW_STEP ?? 1000); // ms per card in the ace draw
-const TURN_LIMIT = Number(process.env.TURN_LIMIT ?? 15000); // ms a player has before the table nags them
+const TURN_LIMIT = Number(process.env.TURN_LIMIT ?? 15000); // ms of the turn ring
 const DRAW_END = Number(process.env.DRAW_END ?? 4500);
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.ADMIN_USERNAME || '').trim().toLowerCase();
 
@@ -151,8 +151,6 @@ app.delete('/api/tables/:code', auth, adminOnly, (req, res) => {
   if (!tables.delete(code)) return res.status(404).json({ error: 'მაგიდა ვერ მოიძებნა' });
   clearTimeout(timers.get(code));
   timers.delete(code);
-  clearTimeout(nagTimers.get(code));
-  nagTimers.delete(code);
   io.to('t:' + code).emit('table:closed');
   saveTables();
   res.json({ ok: true });
@@ -198,8 +196,8 @@ function viewFor(t, uid) {
 const roomSockets = t => [...(io.sockets.adapter.rooms.get('t:' + t.code) || [])].map(id => io.sockets.sockets.get(id)).filter(Boolean);
 const watcherIds = t => [...new Set(roomSockets(t).map(s => s.user.id).filter(id => seatOf(t, id) < 0))];
 
-// 15 s per move: the clock restarts whenever the player to act changes; the server nags the table when it runs out
-const nagTimers = new Map();
+// 15 s per move: the clock restarts whenever the player to act changes (only shown as a ring, nothing is enforced)
+const SOUND_IDS = new Set(['bicho', 'joker', 'wah', 'clap', 'bell', 'buzz']);
 const ACTING = new Set(['bidding', 'trump', 'playing']);
 function trackTurn(t) {
   const g = t.game;
@@ -207,16 +205,7 @@ function trackTurn(t) {
     ? `${g.phase}|${g.turn}|${g.trick.length}|${g.dealIdx}|${g.tricksWon.join()}` : null;
   if (key === t.turnKey) return;
   t.turnKey = key;
-  clearTimeout(nagTimers.get(t.code));
-  nagTimers.delete(t.code);
-  if (!key) { t.turnAt = null; return; }
-  t.turnAt = Date.now();
-  const nag = () => {
-    if (t.turnKey !== key) return;
-    io.to('t:' + t.code).emit('table:nag', { seat: g.turn, name: g.names[g.turn] });
-    nagTimers.set(t.code, setTimeout(nag, TURN_LIMIT));
-  };
-  nagTimers.set(t.code, setTimeout(nag, TURN_LIMIT));
+  t.turnAt = key ? Date.now() : null;
 }
 const turnLeft = t => (t.turnAt ? Math.max(0, TURN_LIMIT - (Date.now() - t.turnAt)) : null);
 
@@ -361,6 +350,20 @@ io.on('connection', socket => {
     cb?.({ peers });
   });
   socket.on('voice:leave', () => leaveVoice(socket));
+
+  // ---- sound pranks: a seated player plays one of a fixed set of sounds "to" another player for the whole table ----
+  let lastSound = 0;
+  socket.on('sound:send', (msg, cb) => {
+    const t = tables.get(socket.tableCode);
+    const from = t ? seatOf(t, uid) : -1;
+    const to = Number(msg?.seat);
+    if (from < 0 || !SOUND_IDS.has(msg?.id) || !Number.isInteger(to) || to < 0 || to > 3 || !t.seats[to]) return cb?.({ error: 'ხმა ვერ გაიგზავნა' });
+    const now = Date.now();
+    if (now - lastSound < 2500) return cb?.({ error: 'ცოტა მოიცადე' });
+    lastSound = now;
+    io.to(roomOf(t)).emit('sound:play', { id: msg.id, from, to, fromName: t.seats[from].name, toName: t.seats[to].name });
+    cb?.({ ok: true });
+  });
   socket.on('voice:signal', msg => {
     const t = tables.get(socket.tableCode);
     if (!t || !socket.voice || typeof msg?.to !== 'string' || typeof msg.data !== 'object') return;
