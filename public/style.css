@@ -439,3 +439,7 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .slotc.s2 .jreact { top: -62px; }
 .slotc.s3 .jreact { top: 6px; left: calc(100% + 6px); margin-left: 0; }
 .slotc .jreact i { animation-delay: .55s !important; }
+
+/* a playable joker in hand glows so you notice you can use it */
+.hc.jk.ok.myturn .c3 .front { animation: jglow 1.2s ease-in-out infinite alternate; }
+@keyframes jglow { from { box-shadow: 0 0 0 2px #ffd25a, 0 0 8px rgba(255,200,60,.6); } to { box-shadow: 0 0 0 3px #ffe9a3, 0 0 22px rgba(255,200,60,1); } }

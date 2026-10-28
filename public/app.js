@@ -460,7 +460,7 @@ function handHtml(g, playingTurn, dealT) {
     const cards = g.hand.slice(idx, idx + count).map((c, j) => {
       const i = idx + j;
       const off = j - (count - 1) / 2;
-      const cls = ['hc', !playingTurn || g.legal.includes(c.id) ? 'ok' : 'dim', playingTurn ? 'myturn' : '', selected === c.id ? 'sel' : ''].join(' ');
+      const cls = ['hc', !playingTurn || g.legal.includes(c.id) ? 'ok' : 'dim', playingTurn ? 'myturn' : '', c.s === 'J' ? 'jk' : '', selected === c.id ? 'sel' : ''].join(' ');
       const delay = (i * 4 + pos) * step - dealT; // order in which this card is dealt out
       const style = `--rot:${(off * ang).toFixed(1)}deg;--ty:${(off * off * (rows === 2 ? 0.4 : 0.9)).toFixed(1)}px;${j ? `margin-left:${-overlap}px` : ''}`;
       const inner = card3d(c, { cls: dealing ? 'dealin' : '', style: dealing ? `animation-delay:${delay}ms` : '' });
@@ -657,9 +657,10 @@ document.addEventListener('click', async e => {
     if (!g || g.phase !== 'playing' || g.turn !== st.seat) return;
     const id = el.dataset.id;
     if (!g.legal.includes(id)) return toast(g.trick.length ? 'ამ კარტს ვერ ითამაშებ — უნდა მიჰყვე ნიშანს (ან დაკრა კოზირი)' : 'ამ კარტს ვერ ითამაშებ');
-    if (selected !== id) { selected = id; return renderGame(); }
     const card = g.hand.find(c => c.id === id);
-    if (card.s === 'J') { jokerPick = id; return renderGame(); }
+    // a joker opens its choice sheet right away (მიმყავს / არ მიმყავს); other cards: tap once to lift, twice to play
+    if (card.s === 'J') { selected = null; jokerPick = id; jokerMode = null; return renderGame(); }
+    if (selected !== id) { selected = id; return renderGame(); }
     return playCard(id);
   }
 
