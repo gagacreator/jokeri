@@ -14,7 +14,7 @@ const TRICK_DELAY = Number(process.env.TRICK_DELAY ?? 1800);
 const DEAL_DELAY = Number(process.env.DEAL_DELAY ?? 5000);
 const DRAW_STEP = Number(process.env.DRAW_STEP ?? 1000); // ms per card in the ace draw
 const DRAW_END = Number(process.env.DRAW_END ?? 4500);
-const ADMIN_USERNAME = (process.env.ADMIN_USERNAME || '').toLowerCase();
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.ADMIN_USERNAME || '').trim().toLowerCase();
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -74,20 +74,23 @@ function adminOnly(req, res, next) {
   next();
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 app.post('/api/register', (req, res) => {
-  const username = String(req.body.username || '').trim().toLowerCase();
+  const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
-  const name = String(req.body.name || '').trim().slice(0, 20) || username;
-  if (!/^[^\s]{3,24}$/.test(username)) return res.status(400).json({ error: 'მომხმარებლის სახელი: 3-24 სიმბოლო, ცარიელი ადგილის გარეშე' });
-  if (password.length < 4) return res.status(400).json({ error: 'პაროლი მინიმუმ 4 სიმბოლო უნდა იყოს' });
-  if (Object.values(db.users).some(u => u.username === username)) return res.status(409).json({ error: 'ეს სახელი დაკავებულია' });
+  const name = String(req.body.name || '').trim().slice(0, 20) || email.split('@')[0];
+  if (!EMAIL_RE.test(email) || email.length > 80) return res.status(400).json({ error: 'ჩაწერე სწორი ელფოსტა' });
+  if (password.length < 6) return res.status(400).json({ error: 'პაროლი მინიმუმ 6 სიმბოლო უნდა იყოს' });
+  if (Object.values(db.users).some(u => u.username === email)) return res.status(409).json({ error: 'ამ ელფოსტით უკვე არის რეგისტრაცია' });
   const salt = crypto.randomBytes(16).toString('hex');
   const user = {
     id: crypto.randomBytes(8).toString('hex'),
-    username, name, salt,
+    username: email, // the email is the login
+    name, salt,
     hash: hashPw(password, salt),
-    // the very first account (or ADMIN_USERNAME) becomes the admin
-    isAdmin: Object.keys(db.users).length === 0 || username === ADMIN_USERNAME,
+    // the very first account (or ADMIN_EMAIL) becomes the admin
+    isAdmin: Object.keys(db.users).length === 0 || email === ADMIN_EMAIL,
   };
   db.users[user.id] = user;
   const token = newSession(user);
@@ -95,11 +98,11 @@ app.post('/api/register', (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const username = String(req.body.username || '').trim().toLowerCase();
+  const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
-  const user = Object.values(db.users).find(u => u.username === username);
+  const user = Object.values(db.users).find(u => u.username === email);
   const ok = user && crypto.timingSafeEqual(Buffer.from(hashPw(password, user.salt), 'hex'), Buffer.from(user.hash, 'hex'));
-  if (!ok) return res.status(401).json({ error: 'არასწორი სახელი ან პაროლი' });
+  if (!ok) return res.status(401).json({ error: 'არასწორი ელფოსტა ან პაროლი' });
   res.json({ token: newSession(user), user: publicUser(user) });
 });
 

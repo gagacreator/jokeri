@@ -24,7 +24,7 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
   await wait(800);
   try {
     const users = [];
-    for (const n of ['voiceaa', 'voicebb', 'voicecc']) users.push(await api('POST', '/api/register', { username: n, password: 'secret' }));
+    for (const n of ['voiceaa', 'voicebb', 'voicecc']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1' }));
     const ice = await api('GET', '/api/ice', null, users[0].token);
     assert(ice.iceServers.length >= 1, 'ice servers');
     const t = await api('POST', '/api/tables', { name: 'v' }, users[0].token);

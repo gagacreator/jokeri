@@ -117,9 +117,9 @@ function renderAuth(error = '') {
         <button data-act="mode-register" class="${reg ? 'on' : ''}">რეგისტრაცია</button>
       </div>
       <form class="card-box" id="authForm">
-        ${reg ? `<div><label>სახელი (როგორც გამოჩნდება მაგიდასთან)</label><input name="name" maxlength="20" autocomplete="nickname" required></div>` : ''}
-        <div><label>მომხმარებლის სახელი</label><input name="username" autocomplete="username" autocapitalize="none" autocorrect="off" required></div>
-        <div><label>პაროლი</label><input name="password" type="password" autocomplete="${reg ? 'new-password' : 'current-password'}" required></div>
+        ${reg ? `<div><label>სახელი (როგორც გამოჩნდება მაგიდასთან)</label><input name="name" maxlength="20" autocomplete="name" required></div>` : ''}
+        <div><label>ელფოსტა (Mail)</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" placeholder="name@example.com" required></div>
+        <div><label>პაროლი${reg ? ' (მინიმუმ 6 სიმბოლო)' : ''}</label><input name="password" type="password" minlength="${reg ? 6 : 1}" autocomplete="${reg ? 'new-password' : 'current-password'}" required></div>
         <div class="err" id="authErr">${esc(error)}</div>
         <button class="btn" type="submit">${reg ? 'რეგისტრაცია' : 'შესვლა'}</button>
       </form>

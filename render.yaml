@@ -7,5 +7,5 @@ services:
     startCommand: node server.js
     healthCheckPath: /
     envVars:
-      - key: ADMIN_USERNAME
+      - key: ADMIN_EMAIL
         sync: false

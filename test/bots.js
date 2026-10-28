@@ -19,17 +19,17 @@ async function api(method, url, body, token) {
   return j;
 }
 
-async function account(username, name) {
-  try { return await api('POST', '/api/register', { username, password: 'secret', name }); }
-  catch { return await api('POST', '/api/login', { username, password: 'secret' }); }
+async function account(email, name) {
+  try { return await api('POST', '/api/register', { email, password: 'secret1', name }); }
+  catch { return await api('POST', '/api/login', { email, password: 'secret1' }); }
 }
 
 (async () => {
-  const admin = await account('admin', 'ადმინი');
+  const admin = await account('admin@test.com', 'ადმინი');
   const table = await api('POST', '/api/tables', { name: 'სატესტო მაგიდა' }, admin.token);
   console.log(`${BASE}/t/${table.code}`);
   for (let i = 1; i <= BOTS; i++) {
-    const u = await account('bot' + i, 'ბოტი' + i);
+    const u = await account(`bot${i}@test.com`, 'ბოტი' + i);
     const s = io(BASE, { auth: { token: u.token } });
     s.on('connect', () => s.emit('table:join', table.code, () => {}));
     s.on('table:state', st => {
