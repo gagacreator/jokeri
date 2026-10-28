@@ -54,6 +54,7 @@ const Chat = (() => {
     fillFeed();
     if (open) inputEl.focus();
     else inputEl.blur();
+    adjustForKeyboard();
   }
 
   function send() {
@@ -86,6 +87,18 @@ const Chat = (() => {
     feedEl = panel.querySelector('.cfeed');
     inputEl = panel.querySelector('.cinput');
     panel.querySelector('.cform').addEventListener('submit', e => { e.preventDefault(); send(); });
+  }
+
+  // the input now sits near the bottom: lift it above the on-screen keyboard (iOS keeps the layout viewport)
+  function adjustForKeyboard() {
+    const vv = window.visualViewport;
+    if (!vv || !panel) return;
+    const off = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    panel.style.transform = open && off > 80 ? `translateY(${-off}px)` : '';
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', adjustForKeyboard);
+    window.visualViewport.addEventListener('scroll', adjustForKeyboard);
   }
 
   function loadHistory() {

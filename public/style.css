@@ -478,3 +478,16 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .cinput:focus { border-color: var(--gold); }
 .csend { width: 42px; height: 42px; flex: none; border: 0; border-radius: 50%; background: rgba(242,193,78,.9); color: var(--ink); font-size: 17px; font-weight: 700; }
 .modal-open #chat, .modal-open #chatfeed { display: none; }
+
+/* right player a little higher; chat feed moved down to sit above the chat button */
+.seat.right { align-self: start; margin-top: 30px; }
+#chatfeed.ingame { top: auto; bottom: calc(158px + env(safe-area-inset-bottom, 0px)); justify-content: flex-end; }
+#chatfeed.ingame.two { bottom: calc(222px + env(safe-area-inset-bottom, 0px)); }
+#chatfeed.ingame:not(.open) .cfeed { max-height: 150px; justify-content: flex-end; }
+#chatfeed.ingame.open .cfeed { max-height: 34vh; }
+
+/* the bidding panel sits in the lower right, so the feed lives between the right player and that panel */
+#chatfeed.ingame, #chatfeed.ingame.two { top: calc(env(safe-area-inset-top, 0px) + 296px); bottom: auto; justify-content: flex-start; width: min(46vw, 190px); }
+#chatfeed.ingame:not(.open) .cfeed { max-height: 150px; justify-content: flex-start; }
+#chatfeed.ingame.open { width: min(70vw, 280px); }
+#chatfeed.ingame.open .cfeed { max-height: 30vh; }

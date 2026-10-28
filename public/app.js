@@ -524,6 +524,7 @@ function renderGame() {
       ${overlayHtml(g, mySeat, dealing)}
     </div>`;
   document.getElementById('chat')?.classList.toggle('two', two);
+  document.getElementById('chatfeed')?.classList.toggle('two', two);
   document.body.classList.toggle('modal-open', !!document.querySelector('.overlay:not(.panel)'));
 }
 
