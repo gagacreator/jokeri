@@ -313,3 +313,15 @@ table.score tfoot td.l { font-size: 12px; font-weight: 600; }
 .game.two .ltc { bottom: calc(206px + env(safe-area-inset-bottom)); }
 .game.two .overlay.panel { padding-bottom: calc(222px + env(safe-area-inset-bottom)); }
 .game.two .hrow:first-child .hc.sel { transform: translateY(calc(var(--ty, 0px) - 16px)) rotate(var(--rot, 0deg)); }
+
+/* corner buttons share one style: ცხრილი (top-left), ხმა (below it), კოზირი (top-right), ბოლო ხელი (below it) */
+.ltc, .game.two .ltc { top: calc(env(safe-area-inset-top, 0px) + 68px); bottom: auto; right: max(10px, calc(50% - 250px)); }
+.lt-toggle { background: rgba(255,255,255,.14); color: #fff; border-radius: 10px; padding: 8px 10px; font-size: 14px; font-weight: 600; backdrop-filter: none; }
+.lt-toggle.open { background: rgba(255,255,255,.26); }
+.lt-row { margin-top: 0; }
+.voice.ingame { left: max(10px, calc(50% - 250px)); top: calc(env(safe-area-inset-top, 0px) + 68px); background: none; padding: 0; backdrop-filter: none; gap: 6px; }
+.voice.ingame button { border-radius: 10px; padding: 8px 10px; min-height: 0; background: rgba(255,255,255,.14); font-size: 14px; font-weight: 600; }
+.voice.ingame .vmic.on { background: #2e7d32; }
+.voice.ingame .vmic.muted { background: #8e2b2b; }
+.voice.ingame .vleave { background: rgba(255,255,255,.14); }
+.voice.ingame .vcount { background: rgba(255,255,255,.14); border-radius: 10px; padding: 8px 8px; }

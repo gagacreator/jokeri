@@ -369,8 +369,8 @@ function lastTrickHtml(g) {
   if (!g.lastTrick) return '';
   const items = g.lastTrick.map(t => `<div class="lt-item ${g.lastWinner === t.seat ? 'win' : ''}">${card3d(t.card)}<span>${esc(g.names[t.seat])}${g.lastWinner === t.seat ? ' ★' : ''}</span></div>`).join('');
   return `<div class="ltc">
-    ${showLast ? `<div class="lt-row">${items}</div>` : ''}
     <button class="lt-toggle ${showLast ? 'open' : ''}" data-act="last">↺ ბოლო ხელი</button>
+    ${showLast ? `<div class="lt-row">${items}</div>` : ''}
   </div>`;
 }
 

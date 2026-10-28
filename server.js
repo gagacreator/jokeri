@@ -24,6 +24,7 @@ function load(file, def) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return def; }
 }
 function save(file, obj) {
+  fs.mkdirSync(path.dirname(file), { recursive: true }); // the data dir may have been removed while running
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(obj));
   fs.renameSync(tmp, file);
