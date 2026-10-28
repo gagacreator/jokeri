@@ -24,10 +24,11 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
   await wait(800);
   try {
     const users = [];
+    const root = await api('POST', '/api/register', { email: 'root@test.com', password: 'secret1', name: 'root' }); // first account = admin, never seated
     for (const n of ['voiceaa', 'voicebb', 'voicecc']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1' }));
     const ice = await api('GET', '/api/ice', null, users[0].token);
     assert(ice.iceServers.length >= 1, 'ice servers');
-    const t = await api('POST', '/api/tables', { name: 'v' }, users[0].token);
+    const t = await api('POST', '/api/tables', { name: 'v' }, root.token);
     const socks = users.map(u => io(BASE, { auth: { token: u.token } }));
     await Promise.all(socks.map(s => new Promise(r => s.on('connect', r))));
     // A and B sit at the table, C does not

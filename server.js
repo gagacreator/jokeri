@@ -291,7 +291,8 @@ io.on('connection', socket => {
     const seated = seatOf(t, uid) >= 0;
     cb?.({
       name: t.name, status: t.status, seated,
-      canPlay: seated || (t.status === 'lobby' && t.seats.some(s => !s)),
+      // the admin only opens tables and watches them like a guest
+      canPlay: !socket.user.isAdmin && (seated || (t.status === 'lobby' && t.seats.some(s => !s))),
       players: t.seats.filter(Boolean).map(s => s.name),
     });
   });
@@ -301,6 +302,7 @@ io.on('connection', socket => {
     const t = tables.get(String(code || '').toLowerCase());
     if (!t) return cb?.({ error: 'მაგიდა ვერ მოიძებნა' });
     let seat = seatOf(t, uid);
+    if (socket.user.isAdmin && seat < 0) mode = 'watch';
     if (seat < 0 && mode !== 'watch') {
       if (t.status !== 'lobby') return cb?.({ error: 'თამაში უკვე დაიწყო' });
       seat = t.seats.findIndex(s => !s);

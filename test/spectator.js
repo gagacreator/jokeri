@@ -24,13 +24,24 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
   await wait(800);
   try {
     const users = [];
+    const root = await api('POST', '/api/register', { email: 'root@test.com', password: 'secret1', name: 'root' }); // first account = admin, never seated
     for (const n of ['pa', 'pb', 'pc', 'pd', 'watcher']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1', name: n }));
-    const t = await api('POST', '/api/tables', { name: 's' }, users[0].token);
+    const t = await api('POST', '/api/tables', { name: 's' }, root.token);
     const socks = users.map(u => io(BASE, { auth: { token: u.token } }));
     await Promise.all(socks.map(s => new Promise(r => s.on('connect', r))));
     const w = socks[4];
     let wstate = null;
     w.on('table:state', s => { wstate = s; });
+
+    // the admin only opens tables: even asking to play, they just watch
+    const rs = io(BASE, { auth: { token: root.token } });
+    await new Promise(r => rs.on('connect', r));
+    let rstate = null;
+    rs.on('table:state', s => { rstate = s; });
+    assert(!(await emit(rs, 'table:info', t.code)).canPlay, 'admin cannot play');
+    assert((await emit(rs, 'table:join', t.code, 'play')).ok, 'admin join ok');
+    await wait(200);
+    assert(rstate && rstate.spectator && rstate.seat === -1 && rstate.isAdmin, 'admin is a spectator');
 
     const info = await emit(w, 'table:info', t.code);
     assert(info.canPlay && !info.seated, 'watcher may play before start');
@@ -41,7 +52,7 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
     await wait(300);
     assert(wstate.game, 'watcher sees the game start');
     assert(wstate.players.every(p => p && p.name), 'seats full, watcher took none');
-    assert(wstate.watchers === 1, 'watchers count');
+    assert(wstate.watchers === 2, 'watchers count (admin + guest)');
 
     // deal is made after the draw; wait for hands
     for (let i = 0; i < 120 && wstate.game.phase === 'draw'; i++) await wait(500);

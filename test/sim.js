@@ -32,14 +32,15 @@ async function main() {
   await new Promise(r => setTimeout(r, 800));
   try {
     const users = [];
+    const root = await api('POST', '/api/register', { email: 'root@test.com', password: 'secret1', name: 'root' }); // first account = admin, never seated
     for (let i = 0; i < 4; i++) users.push(await api('POST', '/api/register', { email: `player${i}@test.com`, password: 'secret1', name: 'მოთამაშე' + i }));
-    if (!users[0].user.isAdmin || users[1].user.isAdmin) throw new Error('admin assignment wrong');
+    if (!root.user.isAdmin || users[0].user.isAdmin) throw new Error('admin assignment wrong');
     await api('POST', '/api/login', { email: 'player2@test.com', password: 'secret1' });
     let bad = false;
     try { await api('POST', '/api/tables', { name: 'x' }, users[1].token); } catch { bad = true; }
     if (!bad) throw new Error('non-admin created a table');
 
-    const table = await api('POST', '/api/tables', { name: 'სატესტო' }, users[0].token);
+    const table = await api('POST', '/api/tables', { name: 'სატესტო' }, root.token);
     console.log('table code', table.code);
 
     let finalState = null;

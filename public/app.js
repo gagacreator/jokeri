@@ -395,7 +395,7 @@ function renderLobby() {
       </div>
       <div class="card-box">
         <div class="muted">გაუგზავნე ლინკი მეგობრებს. როცა 4 მოთამაშე შეიკრიბება, თამაში ავტომატურად დაიწყება.${st.watchers ? ` 👁 მაყურებელი: ${st.watchers}` : ''}</div>
-        ${st.spectator && missing ? '<button class="btn" data-act="sit">მინდა ვითამაშო</button>' : ''}
+        ${st.spectator && missing && !st.isAdmin ? '<button class="btn" data-act="sit">მინდა ვითამაშო</button>' : ''}
         <div class="row">
           <button class="btn grow" data-act="share" data-code="${st.code}" data-name="${esc(st.name)}">ლინკის გაგზავნა</button>
           <button class="btn sec" data-act="copy" data-code="${st.code}">კოპირება</button>

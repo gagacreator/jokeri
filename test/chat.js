@@ -24,8 +24,9 @@ const assert = (c, m) => { if (!c) throw new Error('ASSERT: ' + m); };
   await wait(800);
   try {
     const users = [];
+    const root = await api('POST', '/api/register', { email: 'root@test.com', password: 'secret1', name: 'root' }); // first account = admin, never seated
     for (const n of ['chata', 'chatb', 'chatc']) users.push(await api('POST', '/api/register', { email: n + '@test.com', password: 'secret1', name: n }));
-    const t = await api('POST', '/api/tables', { name: 'c' }, users[0].token);
+    const t = await api('POST', '/api/tables', { name: 'c' }, root.token);
     const socks = users.map(u => io(BASE, { auth: { token: u.token } }));
     await Promise.all(socks.map(s => new Promise(r => s.on('connect', r))));
     await emit(socks[0], 'table:join', t.code);
