@@ -671,3 +671,7 @@ table.score tr.pl td small.cut { color: #ff8a80; }
 .status .tmr { font-weight: 700; font-variant-numeric: tabular-nums; opacity: .85; }
 .status .tmr.late { color: #ff6b6b; opacity: 1; animation: tmrpulse .8s ease-in-out infinite; }
 @keyframes tmrpulse { 50% { opacity: .45; } }
+/* turn timer: a ring that fills around the acting player's avatar */
+.seat.turn .av::after, .mine-info.turn .av::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; background: conic-gradient(var(--ring, #f2c14e) var(--p, 0%), rgba(255,255,255,.14) 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); }
+.seat.turn .av.late, .mine-info.turn .av.late { --ring: #ff5252; }
+.mine-info.turn .av.sm::after { inset: -5px; }

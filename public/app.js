@@ -19,14 +19,22 @@ let showScore = false;
 let showLast = false;
 let turnDeadline = null; // performance.now() value at which the current player's 15 s run out
 
-// countdown next to the status line, updated without re-rendering the table
-setInterval(() => {
+// countdown next to the status line and a ring filling around the acting player's avatar, updated without re-rendering
+const TURN_MS = 15000; // must match the server's TURN_LIMIT default
+function tickTimer() {
+  const ms = turnDeadline === null ? null : Math.max(0, turnDeadline - performance.now());
   const el = document.querySelector('.status .tmr');
-  if (!el) return;
-  const left = turnDeadline === null ? null : Math.ceil((turnDeadline - performance.now()) / 1000);
-  el.textContent = left === null ? '' : ` · ${Math.max(0, left)}`;
-  el.classList.toggle('late', left !== null && left <= 5);
-}, 250);
+  if (el) {
+    el.textContent = ms === null ? '' : ` · ${Math.ceil(ms / 1000)}`;
+    el.classList.toggle('late', ms !== null && ms <= 5000);
+  }
+  const p = ms === null ? 0 : Math.min(100, (1 - ms / TURN_MS) * 100);
+  document.querySelectorAll('.seat.turn .av, .mine-info.turn .av').forEach(a => {
+    a.style.setProperty('--p', p.toFixed(1) + '%');
+    a.classList.toggle('late', ms !== null && ms <= 5000);
+  });
+}
+setInterval(tickTimer, 100);
 
 // a stern buzz, then the recorded voice scolds the slow player for everyone at the table
 let audioCtx = null;
@@ -624,6 +632,7 @@ function renderGame() {
       ${lastTrickHtml(g)}
       ${overlayHtml(g, spectator ? -1 : mySeat, dealing)}
     </div>`;
+  tickTimer();
   document.getElementById('chat')?.classList.toggle('two', two);
   document.getElementById('chatfeed')?.classList.toggle('two', two);
   document.body.classList.toggle('modal-open', !!document.querySelector('.overlay:not(.panel)'));
