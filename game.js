@@ -82,7 +82,7 @@ function startDeal(g) {
   const deck = shuffle(buildDeck());
   g.hands = [0, 1, 2, 3].map(i => deck.slice(i * g.cards, (i + 1) * g.cards));
   // Pulkas 1 and 3 (1..8 cards): the next card of the stock is turned up for trumps.
-  // Pulkas 2 and 4 (9 cards): nothing is turned up; the highest bidder names the trump after bidding.
+  // Pulkas 2 and 4 (9 cards): nothing is turned up; the first player (left of the dealer) names the trump BEFORE anyone bids.
   g.trumpChooser = null;
   if (g.cards < 9) {
     g.trumpCard = deck[4 * g.cards];
@@ -100,7 +100,12 @@ function startDeal(g) {
   g.dealSummary = null;
   g.leader = (g.dealer + 1) % 4;
   g.turn = g.leader;
-  g.phase = 'bidding';
+  if (g.cards === 9) {
+    g.trumpChooser = g.leader;
+    g.phase = 'trump';
+  } else {
+    g.phase = 'bidding';
+  }
 }
 
 function bidOrder(g) {
@@ -124,7 +129,7 @@ function bid(g, seat, n) {
   const idx = order.indexOf(seat);
   if (idx < 3) {
     g.turn = order[idx + 1];
-  } else if (g.cards === 9) {
+  } else if (g.cards === 9 && g.trump === null) { // legacy saved deals: trump still unnamed
     const max = Math.max(...g.bids);
     if (max === 0) {
       g.trump = 'N'; // everybody passed: no trumps
@@ -147,7 +152,7 @@ function chooseTrump(g, seat, suit) {
   if (g.turn !== seat) fail('ახლა შენი რიგი არ არის');
   if (suit !== 'N' && !SUITS.includes(suit)) fail('არასწორი კოზირი');
   g.trump = suit;
-  g.phase = 'playing';
+  g.phase = g.bids.every(b => b !== null) ? 'playing' : 'bidding'; // trump first, then the bids (legacy: bids were already in)
   g.turn = g.leader;
 }
 
